@@ -5,7 +5,6 @@ import logging
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
-from sqlalchemy import or_
 
 from database import SessionLocal, Spin, Lead, PrizeStock, ensure_prize_stock
 from config import (
@@ -16,13 +15,19 @@ from config import (
     PRANK_USER_IDS,
     PRANK_TEXT,
     PRANK_SECTOR_INDEX,
+    PRIZE_UNLOCK_SPINS,
+    CAMPAIGN_START_AT_UTC,
 )
 from bot import get_bot_and_dispatcher
 
 router = APIRouter()
 
-# Захист від подвійного натискання / одночасних запитів
+# Захист від подвійного натискання одного користувача
 SPIN_LOCKS: dict[str, asyncio.Lock] = {}
+
+# Глобальний захист роздачі подарунків.
+# Потрібен, щоб два різні користувачі одночасно не забрали один і той самий слот подарунка.
+PRIZE_DISTRIBUTION_LOCK = asyncio.Lock()
 
 
 def get_spin_lock(user_id_str: str) -> asyncio.Lock:
@@ -58,9 +63,161 @@ def is_real_win(prize: str, sector_index: int, is_prank: bool) -> bool:
     return True
 
 
+def get_nothing_result() -> tuple[str, int]:
+    return "Нічого", 3
+
+
+def get_excluded_user_ids() -> list[str]:
+    """
+    Ці користувачі не рахуються як реальні учасники:
+    - адміни;
+    - prank users.
+    """
+
+    excluded_ids = set()
+
+    for admin_id in ADMINS:
+        excluded_ids.add(str(admin_id))
+
+    for prank_id in PRANK_USER_IDS:
+        excluded_ids.add(str(prank_id))
+
+    return list(excluded_ids)
+
+
+def get_campaign_start_datetime() -> datetime.datetime | None:
+    """
+    Якщо CAMPAIGN_START_AT_UTC заданий у config.py,
+    рахуємо тільки прокрутки після цієї дати.
+    """
+
+    if not CAMPAIGN_START_AT_UTC:
+        return None
+
+    try:
+        return datetime.datetime.fromisoformat(CAMPAIGN_START_AT_UTC)
+    except Exception as e:
+        logging.error(f"Invalid CAMPAIGN_START_AT_UTC: {e}")
+        return None
+
+
+def apply_campaign_filter(query):
+    campaign_start = get_campaign_start_datetime()
+
+    if campaign_start is None:
+        return query
+
+    return query.filter(Spin.datetime >= campaign_start)
+
+
+def get_real_spin_count(db) -> int:
+    """
+    Рахує реальні прокрутки:
+    - без адмінів;
+    - без prank users;
+    - за потреби тільки після CAMPAIGN_START_AT_UTC.
+    """
+
+    query = db.query(Spin)
+
+    excluded_ids = get_excluded_user_ids()
+    if excluded_ids:
+        query = query.filter(~Spin.user_id.in_(excluded_ids))
+
+    query = apply_campaign_filter(query)
+
+    return query.count()
+
+
+def get_awarded_real_prize_count(db) -> int:
+    """
+    Рахує, скільки реальних подарунків вже роздали.
+    "Нічого", prank і адмінські тести не рахуються.
+    """
+
+    query = (
+        db.query(Spin)
+        .filter(Spin.prize != "Нічого")
+        .filter(Spin.prize != PRANK_TEXT)
+    )
+
+    excluded_ids = get_excluded_user_ids()
+    if excluded_ids:
+        query = query.filter(~Spin.user_id.in_(excluded_ids))
+
+    query = apply_campaign_filter(query)
+
+    return query.count()
+
+
+def get_unlocked_prize_slots(real_spin_number: int) -> int:
+    """
+    Скільки подарункових слотів вже відкрито
+    на поточному номері реальної прокрутки.
+    """
+
+    return sum(
+        1
+        for unlock_spin in PRIZE_UNLOCK_SPINS
+        if real_spin_number >= unlock_spin
+    )
+
+
+def get_available_gift_prizes(db) -> list[PrizeStock]:
+    """
+    Доступні саме подарунки.
+    Сектор "Нічого" сюди не входить.
+    """
+
+    return (
+        db.query(PrizeStock)
+        .filter(PrizeStock.sector_index != 3)
+        .filter(PrizeStock.prize != "Нічого")
+        .filter(PrizeStock.weight > 0)
+        .filter(PrizeStock.stock > 0)
+        .all()
+    )
+
+
+def choose_controlled_prize(
+    db,
+    real_spin_number: int,
+) -> tuple[str, int, PrizeStock | None]:
+    """
+    Контрольована логіка:
+
+    1. Якщо ще не настав поріг подарунка — падає "Нічого".
+    2. Якщо подарунковий слот відкрився — видаємо подарунок.
+    3. Якщо всі подарунки закінчились — падає "Нічого".
+    """
+
+    unlocked_slots = get_unlocked_prize_slots(real_spin_number)
+    awarded_prizes = get_awarded_real_prize_count(db)
+
+    # На цьому етапі ще не можна видати новий подарунок
+    if awarded_prizes >= unlocked_slots:
+        prize, sector_index = get_nothing_result()
+        return prize, sector_index, None
+
+    available_gifts = get_available_gift_prizes(db)
+
+    # Усі подарунки закінчились
+    if not available_gifts:
+        prize, sector_index = get_nothing_result()
+        return prize, sector_index, None
+
+    selected = random.choices(
+        available_gifts,
+        weights=[p.weight for p in available_gifts],
+        k=1,
+    )[0]
+
+    return selected.prize, selected.sector_index, selected
+
+
 async def check_channel_subscription(user_id_str: str, is_admin: bool) -> bool:
     """
-    Перевіряє підписку на канал прямо перед прокруткою.
+    Перевіряє підписку на канал перед прокруткою.
     Адмінів пропускаємо без перевірки.
     """
 
@@ -99,6 +256,9 @@ async def notify_admins(
     user_id_str: str,
     is_admin: bool,
     is_prank: bool,
+    real_spin_number: int | None = None,
+    unlocked_slots: int | None = None,
+    awarded_prizes: int | None = None,
 ):
     bot, _ = get_bot_and_dispatcher()
 
@@ -138,18 +298,32 @@ async def notify_admins(
         else f"User ID: {lead.user_id}"
     )
 
-    caption = "\n".join(
+    caption_parts = [
+        f"{title}{admin_note}",
+        "",
+        f"Заявка №{lead.id}",
+        "",
+        f"Імʼя: {lead.name}",
+        f"Телефон: {lead.phone}",
+        telegram_line,
+        f"Telegram ID: {user_id_str}",
+        "",
+        result_block,
+    ]
+
+    if real_spin_number is not None:
+        caption_parts.extend(
+            [
+                "",
+                "📊 Статистика розіграшу:",
+                f"Реальна прокрутка №: {real_spin_number}",
+                f"Відкрито подарункових слотів: {unlocked_slots}",
+                f"Роздано подарунків: {awarded_prizes}",
+            ]
+        )
+
+    caption_parts.extend(
         [
-            f"{title}{admin_note}",
-            "",
-            f"Заявка №{lead.id}",
-            "",
-            f"Імʼя: {lead.name}",
-            f"Телефон: {lead.phone}",
-            telegram_line,
-            f"Telegram ID: {user_id_str}",
-            "",
-            result_block,
             "",
             "⏳ Наступна прокрутка: без обмежень для адміна"
             if is_admin
@@ -158,6 +332,8 @@ async def notify_admins(
             f"Внутрішній ID: {user_id_str}_{lead.id}",
         ]
     )
+
+    caption = "\n".join(caption_parts)
 
     for admin_id in ADMINS:
         try:
@@ -321,49 +497,37 @@ async def spin(request: Request):
                     }
                 )
 
-            available_prizes = (
-                db.query(PrizeStock)
-                .filter(PrizeStock.weight > 0)
-                .filter(
-                    or_(
-                        PrizeStock.stock.is_(None),
-                        PrizeStock.stock > 0,
-                    )
-                )
-                .all()
-            )
+            # Вибір і запис результату захищені глобальним lock,
+            # щоб подарунки не списались неправильно при одночасних прокрутках.
+            async with PRIZE_DISTRIBUTION_LOCK:
+                real_spin_count_before = get_real_spin_count(db)
 
-            if not available_prizes:
-                return JSONResponse(
-                    {
-                        "prize": "Нічого",
-                        "sector_index": 3,
-                        "repeat": False,
-                        "message": "Призи закінчились.",
-                    }
+                # Адмін не рухає прогрес розіграшу.
+                # Реальний користувач = наступний номер прокрутки.
+                real_spin_number = real_spin_count_before + (
+                    0 if is_admin else 1
                 )
 
-            selected = random.choices(
-                available_prizes,
-                weights=[p.weight for p in available_prizes],
-                k=1,
-            )[0]
+                prize, sector_index, selected_prize_stock = choose_controlled_prize(
+                    db=db,
+                    real_spin_number=real_spin_number,
+                )
 
-            prize = selected.prize
-            sector_index = selected.sector_index
+                if selected_prize_stock is not None and not is_admin:
+                    selected_prize_stock.stock -= 1
 
-            if selected.stock is not None and not is_admin:
-                selected.stock -= 1
+                row = Spin(
+                    username=str(username),
+                    user_id=user_id_str,
+                    prize=prize,
+                )
 
-            row = Spin(
-                username=str(username),
-                user_id=user_id_str,
-                prize=prize,
-            )
+                db.add(row)
+                db.commit()
+                db.refresh(row)
 
-            db.add(row)
-            db.commit()
-            db.refresh(row)
+                unlocked_slots = get_unlocked_prize_slots(real_spin_number)
+                awarded_prizes = get_awarded_real_prize_count(db)
 
             await notify_admins(
                 lead=lead,
@@ -372,6 +536,9 @@ async def spin(request: Request):
                 user_id_str=user_id_str,
                 is_admin=is_admin,
                 is_prank=False,
+                real_spin_number=real_spin_number,
+                unlocked_slots=unlocked_slots,
+                awarded_prizes=awarded_prizes,
             )
 
             await notify_user_win(
