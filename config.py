@@ -51,7 +51,7 @@ PRIZES_ = [
         "sector_index": 3,
         "prize": "Нічого",
         "stock": None,
-        "weight": 500,
+        "weight": 50,
     },
     {
         "sector_index": 4,
