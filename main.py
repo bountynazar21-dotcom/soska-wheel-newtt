@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from database import Base, engine
+from database import SessionLocal, init_db, ensure_prize_stock
 from routes.spin import router as spin_router
 from routes.admin import router as admin_router
 from bot import run_bot, shutdown_bot
@@ -23,7 +23,16 @@ app.include_router(admin_router)
 
 @app.on_event("startup")
 async def startup():
-    Base.metadata.create_all(bind=engine)
+    # Створюємо таблиці, якщо їх ще немає
+    init_db()
+
+    # Синхронізуємо призовий фонд з config.py
+    # Якщо PRIZE_POOL_VERSION не змінився — залишки не скинуться.
+    db = SessionLocal()
+    try:
+        ensure_prize_stock(db)
+    finally:
+        db.close()
 
     asyncio.create_task(run_bot())
 
@@ -43,7 +52,7 @@ async def ping():
 
 @app.get("/")
 async def root():
-    return RedirectResponse(url="/static/index.html?v=20")
+    return RedirectResponse(url="/static/index.html?v=31")
 
 
 if __name__ == "__main__":

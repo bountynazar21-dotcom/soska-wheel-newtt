@@ -2,36 +2,198 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <title>Admin – Soska bar x Punch</title>
+  <title>Admin – Soska Bar</title>
+
   <style>
-    body{font-family:Arial, sans-serif;padding:20px;background:#f7f7fb}
-    h1{margin-bottom:16px}
-    table{border-collapse:collapse;width:100%;background:#fff}
-    th,td{border:1px solid #ccc;padding:6px;font-size:14px}
-    th{background:linear-gradient(90deg,#7b45ff,#2ecc71);color:#fff;text-align:left}
-    tr:nth-child(even){background:#f2f2f2}
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f7f7fb;
+      color: #222;
+    }
+
+    h1 {
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      margin-bottom: 18px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      border: 1px solid #e2e2e8;
+      padding: 9px 8px;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    th {
+      background: linear-gradient(90deg, #7b45ff, #2ecc71);
+      color: #fff;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    .row-empty {
+      color: #666;
+    }
+
+    .row-win {
+      background: #fff0f0 !important;
+      color: #111;
+      font-weight: 700;
+      border-left: 8px solid #ff2d2d;
+    }
+
+    .row-win td {
+      border-top: 2px solid #ffb3b3;
+      border-bottom: 2px solid #ffb3b3;
+    }
+
+    .row-prank {
+      background: #fff8dc !important;
+      color: #111;
+      border-left: 8px solid #ffb300;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-win {
+      background: #ff2d2d;
+      color: #fff;
+      animation: pulse 1.2s infinite;
+    }
+
+    .badge-empty {
+      background: #e9e9ef;
+      color: #555;
+    }
+
+    .badge-prank {
+      background: #ffb300;
+      color: #111;
+    }
+
+    .prize-win {
+      color: #d90000;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .prize-empty {
+      color: #777;
+    }
+
+    .prize-prank {
+      color: #b37400;
+      font-weight: 700;
+    }
+
+    .telegram-link {
+      color: #2b65d9;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .telegram-link:hover {
+      text-decoration: underline;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255,45,45,0.55);
+      }
+      70% {
+        box-shadow: 0 0 0 8px rgba(255,45,45,0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255,45,45,0);
+      }
+    }
   </style>
 </head>
+
 <body>
-  <h1>Soska bar x Punch — Admin</h1>
+  <h1>Soska Bar — Admin</h1>
+  <div class="subtitle">
+    Список прокруток колеса. Виграші подарунків виділені червоним.
+  </div>
+
   <table>
     <tr>
       <th>ID</th>
+      <th>Статус</th>
       <th>Username</th>
       <th>User ID</th>
-      <th>Check</th>
       <th>Prize</th>
       <th>Date</th>
     </tr>
+
     {% for s in spins %}
-    <tr>
-      <td>{{ s.id }}</td>
-      <td>{{ s.username }}</td>
-      <td>{{ s.user_id }}</td>
-      <td>{{ s.check_number }}</td>
-      <td>{{ s.prize }}</td>
-      <td>{{ s.datetime }}</td>
-    </tr>
+      {% set is_empty = s.prize == "Нічого" %}
+      {% set is_prank = "шпіоніро" in s.prize %}
+      {% set is_win = not is_empty and not is_prank %}
+
+      <tr class="{% if is_win %}row-win{% elif is_prank %}row-prank{% else %}row-empty{% endif %}">
+        <td>{{ s.id }}</td>
+
+        <td>
+          {% if is_win %}
+            <span class="badge badge-win">🚨 ПЕРЕМОЖЕЦЬ</span>
+          {% elif is_prank %}
+            <span class="badge badge-prank">🤣 PRANK</span>
+          {% else %}
+            <span class="badge badge-empty">Нічого</span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if s.username and s.username != "unknown" and not s.username.isdigit() %}
+            <a class="telegram-link" href="https://t.me/{{ s.username }}" target="_blank">
+              @{{ s.username }}
+            </a>
+          {% else %}
+            {{ s.username }}
+          {% endif %}
+        </td>
+
+        <td>{{ s.user_id }}</td>
+
+        <td>
+          {% if is_win %}
+            <span class="prize-win">🎁 {{ s.prize }}</span>
+          {% elif is_prank %}
+            <span class="prize-prank">{{ s.prize }}</span>
+          {% else %}
+            <span class="prize-empty">{{ s.prize }}</span>
+          {% endif %}
+        </td>
+
+        <td>{{ s.datetime }}</td>
+      </tr>
     {% endfor %}
   </table>
 </body>

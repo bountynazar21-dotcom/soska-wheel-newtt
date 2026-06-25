@@ -22,6 +22,7 @@ from config import (
     CHANNEL_USERNAME,
     CHANNEL_URL,
     SPIN_COOLDOWN_DAYS,
+    ADMINS,
 )
 
 bot: Bot | None = None
@@ -33,6 +34,18 @@ router = Router()
 class Registration(StatesGroup):
     waiting_for_name = State()
     waiting_for_phone = State()
+
+
+def is_admin_user(user_id: int | str | None) -> bool:
+    if user_id is None:
+        return False
+
+    user_id_str = str(user_id)
+
+    if not user_id_str.isdigit():
+        return False
+
+    return int(user_id_str) in ADMINS
 
 
 def format_time_left(delta: datetime.timedelta) -> str:
@@ -82,21 +95,36 @@ def build_subscribe_keyboard() -> InlineKeyboardMarkup:
 
 
 async def is_user_subscribed(bot: Bot, user_id: int) -> bool:
+    if is_admin_user(user_id):
+        return True
+
     try:
         member = await bot.get_chat_member(CHANNEL_USERNAME, user_id)
-        return member.status in ("member", "administrator", "creator")
+
+        return member.status in (
+            "member",
+            "administrator",
+            "creator",
+            "restricted",
+        )
+
     except TelegramAPIError as e:
-        logging.error(f"Subscription check failed: {e}")
+        logging.error(f"Subscription check failed for user {user_id}: {e}")
         return False
 
 
-def get_active_cooldown(user_id: str):
+def get_active_cooldown(user_id: str | int | None):
+    if is_admin_user(user_id):
+        return None
+
+    user_id_str = str(user_id)
+
     db = SessionLocal()
 
     try:
         last_spin = (
             db.query(Spin)
-            .filter(Spin.user_id == user_id)
+            .filter(Spin.user_id == user_id_str)
             .order_by(Spin.datetime.desc())
             .first()
         )
@@ -105,7 +133,9 @@ def get_active_cooldown(user_id: str):
             return None
 
         now = datetime.datetime.utcnow()
-        cooldown_until = last_spin.datetime + datetime.timedelta(days=SPIN_COOLDOWN_DAYS)
+        cooldown_until = last_spin.datetime + datetime.timedelta(
+            days=SPIN_COOLDOWN_DAYS
+        )
 
         if now >= cooldown_until:
             return None
@@ -168,6 +198,7 @@ async def process_phone(message: Message, state: FSMContext, bot: Bot) -> None:
 
     if cooldown_left:
         await state.clear()
+
         await message.answer(
             "Ти вже крутив колесо 🎡\n"
             f"Наступна спроба буде доступна через {format_time_left(cooldown_left)}."
@@ -186,7 +217,11 @@ async def process_phone(message: Message, state: FSMContext, bot: Bot) -> None:
     db = SessionLocal()
 
     try:
-        existing_lead = db.query(Lead).filter(Lead.user_id == user_id).first()
+        existing_lead = (
+            db.query(Lead)
+            .filter(Lead.user_id == user_id)
+            .first()
+        )
 
         if existing_lead:
             existing_lead.username = str(username)
@@ -233,19 +268,23 @@ async def check_subscription_callback(callback: CallbackQuery, bot: Bot) -> None
     cooldown_left = get_active_cooldown(user_id)
 
     if cooldown_left:
-        await callback.message.answer(
-            "Ти вже крутив колесо 🎡\n"
-            f"Наступна спроба буде доступна через {format_time_left(cooldown_left)}."
-        )
+        if callback.message:
+            await callback.message.answer(
+                "Ти вже крутив колесо 🎡\n"
+                f"Наступна спроба буде доступна через {format_time_left(cooldown_left)}."
+            )
         return
 
     subscribed = await is_user_subscribed(bot, callback.from_user.id)
 
     if subscribed:
-        await callback.message.answer(
-            "Підписку підтверджено ✅\nТепер можеш крутити колесо:",
-            reply_markup=build_webapp_keyboard(),
-        )
+        await callback.answer("Підписку підтверджено ✅")
+
+        if callback.message:
+            await callback.message.answer(
+                "Підписку підтверджено ✅\nТепер можеш крутити колесо:",
+                reply_markup=build_webapp_keyboard(),
+            )
     else:
         await callback.answer(
             "Підписку ще не знайдено. Підпишись на канал і натисни ще раз.",
@@ -277,6 +316,7 @@ async def run_bot():
 
     try:
         await dp_obj.start_polling(bot_obj)
+
     except TelegramAPIError as e:
         logging.error(f"Polling error: {e}")
 

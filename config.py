@@ -9,7 +9,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 WEBAPP_URL = os.getenv(
     "WEBAPP_URL",
-    f"{APP_BASE_URL}/static/index.html?v=30",
+    f"{APP_BASE_URL}/static/index.html?v=31",
 )
 
 ADMINS: set[int] = {
@@ -21,19 +21,24 @@ CHANNEL_URL = "https://t.me/soska_bar"
 
 SPIN_COOLDOWN_DAYS = 7
 
+# Версія призового фонду.
+# Якщо змінюємо призи / кількість / ваги — міняємо версію.
+# Це знадобиться в database.py, щоб база не тримала старі залишки.
+PRIZE_POOL_VERSION = "2026-06-25-prize-pool-v2"
+
 # ПОРЯДОК СЕКТОРІВ = ЯК НА КОЛЕСІ
 # ВІД ВЕРХУ ЗА ГОДИННИКОВОЮ
 PRIZES_ = [
     {
         "sector_index": 0,
         "prize": "Vaporesso XROS Mini",
-        "stock": 1,
+        "stock": 2,
         "weight": 1,
     },
     {
         "sector_index": 1,
         "prize": "OXVA XLIM GO KIT",
-        "stock": 1,
+        "stock": 2,
         "weight": 1,
     },
     {
@@ -46,18 +51,18 @@ PRIZES_ = [
         "sector_index": 3,
         "prize": "Нічого",
         "stock": None,
-        "weight": 700,
+        "weight": 500,
     },
     {
         "sector_index": 4,
         "prize": "Vaporesso XROS 5 MINI",
-        "stock": 1,
+        "stock": 2,
         "weight": 1,
     },
     {
         "sector_index": 5,
         "prize": "OXVA XLIM GO Lite",
-        "stock": 1,
+        "stock": 2,
         "weight": 1,
     },
 ]
@@ -154,5 +159,5 @@ PRANK_USER_IDS: set[int] = {
     976918368,
 }
 
-PRANK_TEXT = "Хахах, попався 😄 Жук лаховський"
+PRANK_TEXT = "Хахах, попався шпіоніро ))"
 PRANK_SECTOR_INDEX = 3

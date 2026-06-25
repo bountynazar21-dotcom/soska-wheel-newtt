@@ -19,12 +19,19 @@ async def admin_page(request: Request, user_id: int | None = None):
         )
 
     db = SessionLocal()
+
     try:
         spins = db.query(Spin).order_by(Spin.id.desc()).all()
+
         return templates.TemplateResponse(
             "admin.html",
-            {"request": request, "spins": spins},
+            {
+                "request": request,
+                "spins": spins,
+                "user_id": user_id,
+            },
         )
+
     finally:
         db.close()
 
