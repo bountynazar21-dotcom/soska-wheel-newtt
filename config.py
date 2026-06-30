@@ -31,7 +31,7 @@ PRIZE_MODE = os.getenv("PRIZE_MODE", "chance").strip().lower()
 
 # Шанс виграшу для кожної реальної прокрутки.
 # 10.0 = 10%
-WIN_CHANCE_PERCENT = float(os.getenv("WIN_CHANCE_PERCENT", "10"))
+WIN_CHANCE_PERCENT = float(os.getenv("WIN_CHANCE_PERCENT", "13"))
 
 # На яких реальних прокрутках відкривати подарунки.
 # Це використовується тільки якщо PRIZE_MODE = "controlled".
@@ -49,10 +49,10 @@ PRIZE_UNLOCK_SPINS = [
 
 # Старт розіграшу: 26.06.2026 о 08:30 по Києву.
 # У UTC це 05:30.
-CAMPAIGN_START_AT_UTC = "2026-06-26T05:30:00"
+CAMPAIGN_START_AT_UTC = "2026-07-01T05:30:00"
 
 # Кінець розіграшу в config залишаємо для порядку.
-CAMPAIGN_END_AT_UTC = "2026-06-26T17:30:00"
+CAMPAIGN_END_AT_UTC = "2026-07-04T17:30:00"
 
 # Версія призового фонду.
 # Міняємо на v2, бо змінився порядок секторів під нову картинку.
