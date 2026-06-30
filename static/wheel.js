@@ -15,11 +15,20 @@ let spinning = false;
 let currentRotation = 0;
 let transitionFallbackTimer = null;
 
+// ПОРЯДОК СЕКТОРІВ = ЯК НА НОВОМУ КОЛЕСІ
+// ВІД ВЕРХУ ЗА ГОДИННИКОВОЮ:
+// 0 — Лоторейка OXVA
+// 1 — Шопер
+// 2 — Нічого
+// 3 — Головний убір
+// 4 — OXVA Go Lite
+// 5 — OXVA Pro 3
+// 6 — Брелок
 const sectors = [
   "Лоторейка OXVA",
   "Шопер",
-  "Головний убір",
   "Нічого",
+  "Головний убір",
   "OXVA Go Lite",
   "OXVA Pro 3",
   "Брелок"
@@ -27,8 +36,17 @@ const sectors = [
 
 const SECTOR_ANGLE = 360 / sectors.length;
 
-const SAFE_CENTER_OFFSET = SECTOR_ANGLE / 2;
-const POINTER_OFFSET = -5;
+// На новому колесі сектор 0 вже стоїть по центру зверху,
+// тому половину сектора більше не додаємо.
+const SAFE_CENTER_OFFSET = 0;
+
+// Мікрокалібрування стрілки.
+// 0 = рівно по центру сектора.
+// Якщо стрілка трохи вліво/вправо — міняємо це число.
+// Наприклад: -3, +3, -5, +5.
+const POINTER_OFFSET = 0;
+
+const NOTHING_SECTOR_INDEX = 2;
 
 function setResult(text, type = "default") {
   if (!res) return;
@@ -61,7 +79,7 @@ async function spinRequest(payload) {
 
     return {
       prize: "Помилка",
-      sector_index: 3,
+      sector_index: NOTHING_SECTOR_INDEX,
       repeat: true,
       message: "Помилка. Спробуй ще раз пізніше."
     };
@@ -76,7 +94,7 @@ function isRealWin(prize, sectorIndex) {
   if (!prize) return false;
   if (prize === "Нічого") return false;
   if (prize === "Помилка") return false;
-  if (sectorIndex === 3) return false;
+  if (sectorIndex === NOTHING_SECTOR_INDEX) return false;
   if (isPrankText(prize)) return false;
 
   return true;
@@ -173,13 +191,13 @@ if (!btn || !pointerRotator) {
 
     const { prize, sector_index, repeat, message } = data;
 
-    let sectorIndex = 3;
+    let sectorIndex = NOTHING_SECTOR_INDEX;
 
     if (typeof sector_index === "number" && sector_index >= 0) {
       sectorIndex = sector_index % sectors.length;
     } else {
       const idx = sectors.indexOf(prize);
-      sectorIndex = idx !== -1 ? idx : 3;
+      sectorIndex = idx !== -1 ? idx : NOTHING_SECTOR_INDEX;
       console.warn("Prize not matched, using fallback sector:", prize);
     }
 

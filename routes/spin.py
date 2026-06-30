@@ -24,6 +24,9 @@ from bot import get_bot_and_dispatcher
 
 router = APIRouter()
 
+# На новому колесі сектор "Нічого" має індекс 2
+NOTHING_SECTOR_INDEX = 2
+
 # Захист від подвійного натискання одного користувача
 SPIN_LOCKS: dict[str, asyncio.Lock] = {}
 
@@ -56,7 +59,7 @@ def is_real_win(prize: str, sector_index: int, is_prank: bool) -> bool:
     if is_prank:
         return False
 
-    if sector_index == 3:
+    if sector_index == NOTHING_SECTOR_INDEX:
         return False
 
     if prize == "Нічого":
@@ -66,7 +69,7 @@ def is_real_win(prize: str, sector_index: int, is_prank: bool) -> bool:
 
 
 def get_nothing_result() -> tuple[str, int]:
-    return "Нічого", 3
+    return "Нічого", NOTHING_SECTOR_INDEX
 
 
 def get_excluded_user_ids() -> list[str]:
@@ -174,7 +177,7 @@ def get_available_gift_prizes(db) -> list[PrizeStock]:
 
     return (
         db.query(PrizeStock)
-        .filter(PrizeStock.sector_index != 3)
+        .filter(PrizeStock.sector_index != NOTHING_SECTOR_INDEX)
         .filter(PrizeStock.prize != "Нічого")
         .filter(PrizeStock.weight > 0)
         .filter(PrizeStock.stock > 0)
@@ -472,7 +475,7 @@ async def spin(request: Request):
                 return JSONResponse(
                     {
                         "prize": "Нічого",
-                        "sector_index": 3,
+                        "sector_index": NOTHING_SECTOR_INDEX,
                         "repeat": True,
                         "message": "Спочатку пройди реєстрацію в боті.",
                     }
@@ -487,7 +490,7 @@ async def spin(request: Request):
                 return JSONResponse(
                     {
                         "prize": "Нічого",
-                        "sector_index": 3,
+                        "sector_index": NOTHING_SECTOR_INDEX,
                         "repeat": True,
                         "message": (
                             "Щоб крутити колесо, потрібно бути підписаним "
@@ -516,7 +519,7 @@ async def spin(request: Request):
                             "prize": last_spin.prize,
                             "sector_index": PRANK_SECTOR_INDEX
                             if is_prank_user
-                            else 3,
+                            else NOTHING_SECTOR_INDEX,
                             "repeat": True,
                             "message": (
                                 "Ви вже крутили колесо. "

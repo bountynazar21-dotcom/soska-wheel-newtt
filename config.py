@@ -9,7 +9,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 WEBAPP_URL = os.getenv(
     "WEBAPP_URL",
-    f"{APP_BASE_URL}/static/index.html?v=35",
+    f"{APP_BASE_URL}/static/index.html?v=36",
 )
 
 ADMINS: set[int] = {
@@ -49,26 +49,27 @@ PRIZE_UNLOCK_SPINS = [
 
 # Старт розіграшу: 26.06.2026 о 08:30 по Києву.
 # У UTC це 05:30.
-#
-# Це НЕ блокує запуск бота.
-# Це потрібно тільки для того, щоб старі тестові прокрутки
-# не рахувалися в прогрес 600 людей.
 CAMPAIGN_START_AT_UTC = "2026-06-26T05:30:00"
 
 # Кінець розіграшу в config залишаємо для порядку.
-# Якщо ти вручну вимикаєш бота після 20:30,
-# у routes/spin.py цей параметр можна не використовувати.
 CAMPAIGN_END_AT_UTC = "2026-06-26T17:30:00"
 
 # Версія призового фонду.
-# Якщо треба примусово оновити залишки призів у базі — міняємо версію.
+# Міняємо на v2, бо змінився порядок секторів під нову картинку.
 PRIZE_POOL_VERSION = os.getenv(
     "PRIZE_POOL_VERSION",
-    "lotoreyka-oxva-v1",
+    "lotoreyka-oxva-v2",
 )
 
-# ПОРЯДОК СЕКТОРІВ = ЯК НА КОЛЕСІ
-# ВІД ВЕРХУ ЗА ГОДИННИКОВОЮ
+# ПОРЯДОК СЕКТОРІВ = ЯК НА НОВОМУ КОЛЕСІ
+# ВІД ВЕРХУ ЗА ГОДИННИКОВОЮ:
+# 0 — Лоторейка OXVA
+# 1 — Шопер
+# 2 — Нічого
+# 3 — Головний убір
+# 4 — OXVA Go Lite
+# 5 — OXVA Pro 3
+# 6 — Брелок
 PRIZES_ = [
     {
         "sector_index": 0,
@@ -84,15 +85,15 @@ PRIZES_ = [
     },
     {
         "sector_index": 2,
-        "prize": "Головний убір",
-        "stock": 10,
-        "weight": 1,
-    },
-    {
-        "sector_index": 3,
         "prize": "Нічого",
         "stock": None,
         "weight": 50,
+    },
+    {
+        "sector_index": 3,
+        "prize": "Головний убір",
+        "stock": 10,
+        "weight": 1,
     },
     {
         "sector_index": 4,
@@ -207,4 +208,6 @@ PRANK_USER_IDS: set[int] = {
 }
 
 PRANK_TEXT = "Хахах, попався шпіоніро ))"
-PRANK_SECTOR_INDEX = 3
+
+# На новій картинці сектор "Нічого" має індекс 2
+PRANK_SECTOR_INDEX = 2
