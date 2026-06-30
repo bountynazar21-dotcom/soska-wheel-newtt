@@ -2,14 +2,14 @@ import os
 
 APP_BASE_URL = os.getenv(
     "APP_BASE_URL",
-    "https://soska-wheel-app-production.up.railway.app",
+    "https://soska-wheel-newtt-production.up.railway.app",
 )
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 WEBAPP_URL = os.getenv(
     "WEBAPP_URL",
-    f"{APP_BASE_URL}/static/index.html?v=34",
+    f"{APP_BASE_URL}/static/index.html?v=35",
 )
 
 ADMINS: set[int] = {
