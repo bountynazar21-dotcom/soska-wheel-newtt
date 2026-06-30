@@ -8,9 +8,26 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 import datetime
+import os
+
+
+# =========================
+# ШЛЯХ ДО БАЗИ
+# =========================
+# Локально буде wheel.db
+# На Railway бажано поставити змінну:
+# DB_PATH=/app/data/wheel.db
+# і підключити Railway Volume до /app/data
+
+DB_PATH = os.getenv("DB_PATH", "wheel.db")
+
+DB_DIR = os.path.dirname(DB_PATH)
+if DB_DIR:
+    os.makedirs(DB_DIR, exist_ok=True)
+
 
 engine = create_engine(
-    "sqlite:///wheel.db",
+    f"sqlite:///{DB_PATH}",
     connect_args={"check_same_thread": False},
     echo=False,
 )
@@ -142,6 +159,7 @@ def ensure_prize_stock(db) -> None:
 
     # Видаляємо старі сектори, яких більше немає в config.py
     old_prizes = db.query(PrizeStock).all()
+
     for old_prize in old_prizes:
         if old_prize.sector_index not in config_sector_indexes:
             db.delete(old_prize)

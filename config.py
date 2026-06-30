@@ -9,7 +9,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 WEBAPP_URL = os.getenv(
     "WEBAPP_URL",
-    f"{APP_BASE_URL}/static/index.html?v=33",
+    f"{APP_BASE_URL}/static/index.html?v=34",
 )
 
 ADMINS: set[int] = {
@@ -24,20 +24,17 @@ SPIN_COOLDOWN_DAYS = 7
 # Середня очікувана кількість учасників за день
 EXPECTED_PARTICIPANTS = 600
 
+# Режим видачі подарунків:
+# chance = шанс на виграш у відсотках
+# controlled = подарунки відкриваються на конкретних прокрутках через PRIZE_UNLOCK_SPINS
+PRIZE_MODE = os.getenv("PRIZE_MODE", "chance").strip().lower()
+
+# Шанс виграшу для кожної реальної прокрутки.
+# 10.0 = 10%
+WIN_CHANCE_PERCENT = float(os.getenv("WIN_CHANCE_PERCENT", "10"))
+
 # На яких реальних прокрутках відкривати подарунки.
-# Усього 9 подарунків = 9 порогів.
-#
-# Логіка:
-# 1–39 прокрутка — тільки "Нічого"
-# 40+ — відкривається 1 подарунок
-# 100+ — 2 подарунок
-# 160+ — 3 подарунок
-# 220+ — 4 подарунок
-# 285+ — 5 подарунок
-# 350+ — 6 подарунок
-# 420+ — 7 подарунок
-# 490+ — 8 подарунок
-# 550+ — 9 подарунок
+# Це використовується тільки якщо PRIZE_MODE = "controlled".
 PRIZE_UNLOCK_SPINS = [
     40,
     100,
@@ -65,27 +62,30 @@ CAMPAIGN_END_AT_UTC = "2026-06-26T17:30:00"
 
 # Версія призового фонду.
 # Якщо треба примусово оновити залишки призів у базі — міняємо версію.
-PRIZE_POOL_VERSION = "2026-06-26-prize-pool-v2-600"
+PRIZE_POOL_VERSION = os.getenv(
+    "PRIZE_POOL_VERSION",
+    "lotoreyka-oxva-v1",
+)
 
 # ПОРЯДОК СЕКТОРІВ = ЯК НА КОЛЕСІ
 # ВІД ВЕРХУ ЗА ГОДИННИКОВОЮ
 PRIZES_ = [
     {
         "sector_index": 0,
-        "prize": "Vaporesso XROS Mini",
-        "stock": 2,
+        "prize": "Лоторейка OXVA",
+        "stock": 30,
         "weight": 1,
     },
     {
         "sector_index": 1,
-        "prize": "OXVA XLIM GO KIT",
-        "stock": 2,
+        "prize": "Шопер",
+        "stock": 10,
         "weight": 1,
     },
     {
         "sector_index": 2,
-        "prize": "POD Система IBAR Smart Pod Carbon",
-        "stock": 1,
+        "prize": "Головний убір",
+        "stock": 10,
         "weight": 1,
     },
     {
@@ -96,14 +96,20 @@ PRIZES_ = [
     },
     {
         "sector_index": 4,
-        "prize": "Vaporesso XROS 5 MINI",
-        "stock": 2,
+        "prize": "OXVA Go Lite",
+        "stock": 3,
         "weight": 1,
     },
     {
         "sector_index": 5,
-        "prize": "OXVA XLIM GO Lite",
+        "prize": "OXVA Pro 3",
         "stock": 2,
+        "weight": 1,
+    },
+    {
+        "sector_index": 6,
+        "prize": "Брелок",
+        "stock": 10,
         "weight": 1,
     },
 ]

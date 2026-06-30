@@ -16,6 +16,8 @@ from config import (
     PRANK_TEXT,
     PRANK_SECTOR_INDEX,
     PRIZE_UNLOCK_SPINS,
+    PRIZE_MODE,
+    WIN_CHANCE_PERCENT,
     CAMPAIGN_START_AT_UTC,
 )
 from bot import get_bot_and_dispatcher
@@ -154,6 +156,7 @@ def get_unlocked_prize_slots(real_spin_number: int) -> int:
     """
     Скільки подарункових слотів вже відкрито
     на поточному номері реальної прокрутки.
+    Використовується тільки для режиму PRIZE_MODE = controlled.
     """
 
     return sum(
@@ -179,6 +182,46 @@ def get_available_gift_prizes(db) -> list[PrizeStock]:
     )
 
 
+def choose_available_gift_prize(db) -> tuple[str, int, PrizeStock | None]:
+    """
+    Обирає випадковий подарунок із тих, які ще є в наявності.
+    """
+
+    available_gifts = get_available_gift_prizes(db)
+
+    if not available_gifts:
+        prize, sector_index = get_nothing_result()
+        return prize, sector_index, None
+
+    selected = random.choices(
+        available_gifts,
+        weights=[p.weight for p in available_gifts],
+        k=1,
+    )[0]
+
+    return selected.prize, selected.sector_index, selected
+
+
+def choose_chance_prize(db) -> tuple[str, int, PrizeStock | None]:
+    """
+    Логіка шансу:
+
+    1. Генеруємо випадкове число від 0 до 100.
+    2. Якщо число більше за WIN_CHANCE_PERCENT — падає "Нічого".
+    3. Якщо шанс спрацював — видаємо один із доступних подарунків.
+    4. Якщо подарунки закінчились — падає "Нічого".
+    """
+
+    chance = max(0.0, min(100.0, float(WIN_CHANCE_PERCENT)))
+    roll = random.uniform(0, 100)
+
+    if roll > chance:
+        prize, sector_index = get_nothing_result()
+        return prize, sector_index, None
+
+    return choose_available_gift_prize(db)
+
+
 def choose_controlled_prize(
     db,
     real_spin_number: int,
@@ -199,20 +242,28 @@ def choose_controlled_prize(
         prize, sector_index = get_nothing_result()
         return prize, sector_index, None
 
-    available_gifts = get_available_gift_prizes(db)
+    return choose_available_gift_prize(db)
 
-    # Усі подарунки закінчились
-    if not available_gifts:
-        prize, sector_index = get_nothing_result()
-        return prize, sector_index, None
 
-    selected = random.choices(
-        available_gifts,
-        weights=[p.weight for p in available_gifts],
-        k=1,
-    )[0]
+def choose_prize(
+    db,
+    real_spin_number: int,
+) -> tuple[str, int, PrizeStock | None]:
+    """
+    Основний вибір подарунка.
+    Режим задається в config.py через PRIZE_MODE.
 
-    return selected.prize, selected.sector_index, selected
+    PRIZE_MODE = "chance" — працює шанс у відсотках.
+    PRIZE_MODE = "controlled" — працюють пороги PRIZE_UNLOCK_SPINS.
+    """
+
+    if PRIZE_MODE == "controlled":
+        return choose_controlled_prize(
+            db=db,
+            real_spin_number=real_spin_number,
+        )
+
+    return choose_chance_prize(db)
 
 
 async def check_channel_subscription(user_id_str: str, is_admin: bool) -> bool:
@@ -316,11 +367,17 @@ async def notify_admins(
             [
                 "",
                 "📊 Статистика розіграшу:",
+                f"Режим: {PRIZE_MODE}",
+                f"Шанс виграшу: {WIN_CHANCE_PERCENT}%",
                 f"Реальна прокрутка №: {real_spin_number}",
-                f"Відкрито подарункових слотів: {unlocked_slots}",
                 f"Роздано подарунків: {awarded_prizes}",
             ]
         )
+
+        if PRIZE_MODE == "controlled":
+            caption_parts.append(
+                f"Відкрито подарункових слотів: {unlocked_slots}"
+            )
 
     caption_parts.extend(
         [
@@ -508,7 +565,7 @@ async def spin(request: Request):
                     0 if is_admin else 1
                 )
 
-                prize, sector_index, selected_prize_stock = choose_controlled_prize(
+                prize, sector_index, selected_prize_stock = choose_prize(
                     db=db,
                     real_spin_number=real_spin_number,
                 )

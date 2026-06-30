@@ -16,12 +16,13 @@ let currentRotation = 0;
 let transitionFallbackTimer = null;
 
 const sectors = [
-  "Vaporesso XROS Mini",
-  "OXVA XLIM GO KIT",
-  "POD Система IBAR Smart Pod Carbon",
+  "Лоторейка OXVA",
+  "Шопер",
+  "Головний убір",
   "Нічого",
-  "Vaporesso XROS 5 MINI",
-  "OXVA XLIM GO Lite"
+  "OXVA Go Lite",
+  "OXVA Pro 3",
+  "Брелок"
 ];
 
 const SECTOR_ANGLE = 360 / sectors.length;

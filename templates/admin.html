@@ -22,6 +22,39 @@
       font-size: 14px;
     }
 
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      border: 1px solid #ececf2;
+    }
+
+    .card-title {
+      color: #666;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .card-value {
+      font-size: 22px;
+      font-weight: 900;
+      color: #222;
+    }
+
+    .section-title {
+      margin: 24px 0 10px;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
     table {
       border-collapse: collapse;
       width: 100%;
@@ -29,6 +62,7 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.06);
       border-radius: 12px;
       overflow: hidden;
+      margin-bottom: 24px;
     }
 
     th,
@@ -97,6 +131,26 @@
       color: #111;
     }
 
+    .badge-stock {
+      background: #e9e9ef;
+      color: #333;
+    }
+
+    .badge-stock-good {
+      background: #2ecc71;
+      color: #fff;
+    }
+
+    .badge-stock-empty {
+      background: #ff2d2d;
+      color: #fff;
+    }
+
+    .badge-unlimited {
+      background: #7b45ff;
+      color: #fff;
+    }
+
     .prize-win {
       color: #d90000;
       font-size: 15px;
@@ -139,8 +193,60 @@
 <body>
   <h1>Soska Bar — Admin</h1>
   <div class="subtitle">
-    Список прокруток колеса. Виграші подарунків виділені червоним.
+    Адмін-панель колеса фортуни. Виграші подарунків виділені червоним.
   </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-title">Режим розіграшу</div>
+      <div class="card-value">{{ prize_mode | default("chance") }}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Шанс виграшу</div>
+      <div class="card-value">{{ win_chance_percent | default("10") }}%</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Усього прокруток</div>
+      <div class="card-value">{{ total_spins | default(spins | length) }}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Усього переможців</div>
+      <div class="card-value">{{ total_wins | default("—") }}</div>
+    </div>
+  </div>
+
+  <div class="section-title">Залишки подарунків</div>
+
+  <table>
+    <tr>
+      <th>Сектор</th>
+      <th>Подарунок</th>
+      <th>Залишок</th>
+      <th>Вага</th>
+    </tr>
+
+    {% for p in prize_stocks | default([]) %}
+      <tr>
+        <td>{{ p.sector_index }}</td>
+        <td>{{ p.prize }}</td>
+        <td>
+          {% if p.stock is none %}
+            <span class="badge badge-unlimited">Безліміт</span>
+          {% elif p.stock > 0 %}
+            <span class="badge badge-stock-good">{{ p.stock }} шт</span>
+          {% else %}
+            <span class="badge badge-stock-empty">Закінчився</span>
+          {% endif %}
+        </td>
+        <td>{{ p.weight }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  <div class="section-title">Список прокруток</div>
 
   <table>
     <tr>
@@ -154,7 +260,7 @@
 
     {% for s in spins %}
       {% set is_empty = s.prize == "Нічого" %}
-      {% set is_prank = "шпіоніро" in s.prize %}
+      {% set is_prank = "шпіоніро" in s.prize or "попався" in s.prize %}
       {% set is_win = not is_empty and not is_prank %}
 
       <tr class="{% if is_win %}row-win{% elif is_prank %}row-prank{% else %}row-empty{% endif %}">
