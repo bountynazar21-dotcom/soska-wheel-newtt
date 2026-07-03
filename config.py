@@ -9,7 +9,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 WEBAPP_URL = os.getenv(
     "WEBAPP_URL",
-    f"{APP_BASE_URL}/static/index.html?v=37",
+    f"{APP_BASE_URL}/static/index.html?v=36",
 )
 
 ADMINS: set[int] = {
@@ -21,46 +21,49 @@ CHANNEL_URL = "https://t.me/soska_bar"
 
 SPIN_COOLDOWN_DAYS = 7
 
-# Середня очікувана кількість учасників
+# Середня очікувана кількість учасників за день
 EXPECTED_PARTICIPANTS = 600
 
 # Режим видачі подарунків:
-# controlled = подарунки відкриваються на конкретних прокрутках
-PRIZE_MODE = os.getenv("PRIZE_MODE", "controlled").strip().lower()
+# chance = шанс на виграш у відсотках
+# controlled = подарунки відкриваються на конкретних прокрутках через PRIZE_UNLOCK_SPINS
+PRIZE_MODE = os.getenv("PRIZE_MODE", "chance").strip().lower()
 
-# У controlled-режимі шанс не використовується.
-# Залишаємо 0, щоб випадково не працював chance-режим.
-WIN_CHANCE_PERCENT = float(os.getenv("WIN_CHANCE_PERCENT", "0"))
+# Шанс виграшу для кожної реальної прокрутки.
+# 10.0 = 10%
+WIN_CHANCE_PERCENT = float(os.getenv("WIN_CHANCE_PERCENT", "25"))
 
-# Відкриваємо тільки 1 подарунок на 450-й реальній прокрутці.
+# На яких реальних прокрутках відкривати подарунки.
+# Це використовується тільки якщо PRIZE_MODE = "controlled".
 PRIZE_UNLOCK_SPINS = [
-    450,
+    40,
+    100,
+    160,
+    220,
+    285,
+    350,
+    420,
+    490,
+    550,
 ]
 
-# Старт розіграшу.
-# ВАЖЛИВО:
-# якщо в базі вже є старі прокрутки після цієї дати,
-# вони будуть рахуватись у ці 450 спінів.
-#
-# Якщо треба рахувати 450 спінів прямо з моменту нового запуску,
-# постав сюди актуальний час старту в UTC.
+# Старт розіграшу: 26.06.2026 о 08:30 по Києву.
+# У UTC це 05:30.
 CAMPAIGN_START_AT_UTC = "2026-07-01T05:30:00"
 
-# Кінець розіграшу. Якщо ти вручну вимикаєш бота,
-# цей параметр може просто лежати для порядку.
+# Кінець розіграшу в config залишаємо для порядку.
 CAMPAIGN_END_AT_UTC = "2026-07-04T17:30:00"
 
 # Версія призового фонду.
-# Міняємо версію, щоб база точно оновила залишки:
-# XROS Mini = 1 шт, всі інші = 0.
+# Міняємо на v2, бо змінився порядок секторів під нову картинку.
 PRIZE_POOL_VERSION = os.getenv(
     "PRIZE_POOL_VERSION",
-    "xros-mini-one-prize-after-450-v2",
+    "lotoreyka-oxva-v2",
 )
 
 # ПОРЯДОК СЕКТОРІВ = ЯК НА НОВОМУ КОЛЕСІ
 # ВІД ВЕРХУ ЗА ГОДИННИКОВОЮ:
-# 0 — Vaporesso XROS Mini
+# 0 — Лоторейка OXVA
 # 1 — Шопер
 # 2 — Нічого
 # 3 — Головний убір
@@ -70,15 +73,15 @@ PRIZE_POOL_VERSION = os.getenv(
 PRIZES_ = [
     {
         "sector_index": 0,
-        "prize": "Vaporesso XROS Mini",
-        "stock": 1,
+        "prize": "Лоторейка OXVA",
+        "stock": 30,
         "weight": 1,
     },
     {
         "sector_index": 1,
         "prize": "Шопер",
-        "stock": 0,
-        "weight": 0,
+        "stock": 9,
+        "weight": 1,
     },
     {
         "sector_index": 2,
@@ -89,26 +92,26 @@ PRIZES_ = [
     {
         "sector_index": 3,
         "prize": "Головний убір",
-        "stock": 0,
-        "weight": 0,
+        "stock": 10,
+        "weight": 1,
     },
     {
         "sector_index": 4,
         "prize": "OXVA Go Lite",
-        "stock": 0,
-        "weight": 0,
+        "stock": 3,
+        "weight": 1,
     },
     {
         "sector_index": 5,
         "prize": "OXVA Pro 3",
-        "stock": 0,
-        "weight": 0,
+        "stock": 2,
+        "weight": 1,
     },
     {
         "sector_index": 6,
         "prize": "Брелок",
-        "stock": 0,
-        "weight": 0,
+        "stock": 10,
+        "weight": 1,
     },
 ]
 
