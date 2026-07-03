@@ -31,7 +31,7 @@ PRIZE_MODE = os.getenv("PRIZE_MODE", "chance").strip().lower()
 
 # Шанс виграшу для кожної реальної прокрутки.
 # 10.0 = 10%
-WIN_CHANCE_PERCENT = float(os.getenv("WIN_CHANCE_PERCENT", "13"))
+WIN_CHANCE_PERCENT = float(os.getenv("WIN_CHANCE_PERCENT", "25"))
 
 # На яких реальних прокрутках відкривати подарунки.
 # Це використовується тільки якщо PRIZE_MODE = "controlled".
