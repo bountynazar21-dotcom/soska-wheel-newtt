@@ -38,7 +38,7 @@ WIN_CHANCE_PERCENT = float(os.getenv("WIN_CHANCE_PERCENT", "100"))
 PRIZE_UNLOCK_SPINS = [
     40,
     100,
-    160,
+    100
     220,
     285,
     350,
