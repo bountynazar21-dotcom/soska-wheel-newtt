@@ -74,13 +74,13 @@ PRIZES_ = [
     {
         "sector_index": 0,
         "prize": "Лоторейка OXVA",
-        "stock": 30,
+        "stock": 9,
         "weight": 1,
     },
     {
         "sector_index": 1,
         "prize": "Шопер",
-        "stock": 9,
+        "stock": 3,
         "weight": 1,
     },
     {
@@ -92,25 +92,25 @@ PRIZES_ = [
     {
         "sector_index": 3,
         "prize": "Головний убір",
-        "stock": 10,
+        "stock": 2,
         "weight": 1,
     },
     {
         "sector_index": 4,
-        "prize": "OXVA Go Lite",
+        "prize": "OXVA XLIM Go Lite",
         "stock": 3,
         "weight": 1,
     },
     {
         "sector_index": 5,
-        "prize": "OXVA Pro 3",
+        "prize": "OXVA XLIM Pro 3",
         "stock": 2,
         "weight": 1,
     },
     {
         "sector_index": 6,
         "prize": "Брелок",
-        "stock": 10,
+        "stock": 2,
         "weight": 1,
     },
 ]
