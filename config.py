@@ -1,5 +1,6 @@
 import os
 
+
 APP_BASE_URL = os.getenv(
     "APP_BASE_URL",
     "https://soska-wheel-newtt-production.up.railway.app",
@@ -12,33 +13,46 @@ WEBAPP_URL = os.getenv(
     f"{APP_BASE_URL}/static/index.html?v=36",
 )
 
+
+# Telegram ID адміністраторів
 ADMINS: set[int] = {
     5480082089,
 }
 
+
 CHANNEL_USERNAME = "@soska_bar"
 CHANNEL_URL = "https://t.me/soska_bar"
 
+
+# Користувач може крутити колесо один раз на 7 днів
 SPIN_COOLDOWN_DAYS = 7
+
 
 # Середня очікувана кількість учасників за день
 EXPECTED_PARTICIPANTS = 600
 
-# Режим видачі подарунків:
-# chance = шанс на виграш у відсотках
-# controlled = подарунки відкриваються на конкретних прокрутках через PRIZE_UNLOCK_SPINS
-PRIZE_MODE = os.getenv("PRIZE_MODE", "chance").strip().lower()
 
-# Шанс виграшу для кожної реальної прокрутки.
-# 10.0 = 10%
-WIN_CHANCE_PERCENT = float(os.getenv("WIN_CHANCE_PERCENT", "100"))
+# Режим видачі подарунків:
+# chance — подарунки видаються відповідно до шансу WIN_CHANCE_PERCENT
+# controlled — подарунки відкриваються на прокрутках PRIZE_UNLOCK_SPINS
+#
+# Зараз встановлено режим chance.
+PRIZE_MODE = "chance"
+
+
+# Шанс перемоги для кожної реальної прокрутки.
+# 100.0 = 100% шанс на перемогу.
+WIN_CHANCE_PERCENT = 100.0
+
 
 # На яких реальних прокрутках відкривати подарунки.
-# Це використовується тільки якщо PRIZE_MODE = "controlled"/.
+# Використовується тільки якщо PRIZE_MODE = "controlled".
+#
+# У режимі chance цей список не використовується.
 PRIZE_UNLOCK_SPINS = [
     40,
     100,
-    100
+    160,
     220,
     285,
     350,
@@ -47,28 +61,30 @@ PRIZE_UNLOCK_SPINS = [
     550,
 ]
 
-# Старт розіграшу: 26.06.2026 о 08:30 по Києву.
-# У UTC це 05:30.
+
+# Старт розіграшу
 CAMPAIGN_START_AT_UTC = "2026-07-01T05:30:00"
 
-# Кінець розіграшу в config залишаємо для порядку.
+
+# Кінець розіграшу
 CAMPAIGN_END_AT_UTC = "2026-07-04T17:30:00"
 
-# Версія призового фонду.
-# Міняємо на v2, бо змінився порядок секторів під нову картинку.
+
+# Версія призового фонду
 PRIZE_POOL_VERSION = os.getenv(
     "PRIZE_POOL_VERSION",
     "lotoreyka-oxva-v2",
 )
 
-# ПОРЯДОК СЕКТОРІВ = ЯК НА НОВОМУ КОЛЕСІ
-# ВІД ВЕРХУ ЗА ГОДИННИКОВОЮ:
+
+# ПОРЯДОК СЕКТОРІВ НА КОЛЕСІ:
+#
 # 0 — Лоторейка OXVA
 # 1 — Шопер
 # 2 — Нічого
 # 3 — Головний убір
-# 4 — OXVA Go Lite
-# 5 — OXVA Pro 3
+# 4 — OXVA XLIM Go Lite
+# 5 — OXVA XLIM Pro 3
 # 6 — Брелок
 PRIZES_ = [
     {
@@ -115,6 +131,8 @@ PRIZES_ = [
     },
 ]
 
+
+# Користувачі для жартівливої прокрутки
 PRANK_USER_IDS: set[int] = {
     642600326,
     1092942921,
@@ -207,7 +225,9 @@ PRANK_USER_IDS: set[int] = {
     976918368,
 }
 
+
 PRANK_TEXT = "Хахах, попався шпіоніро ))"
 
-# На новій картинці сектор "Нічого" має індекс 2
+
+# На новій картинці сектор «Нічого» має індекс 2
 PRANK_SECTOR_INDEX = 2
