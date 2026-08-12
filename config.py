@@ -9,7 +9,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 WEBAPP_URL = os.getenv(
     "WEBAPP_URL",
-    f"{APP_BASE_URL}/static/index.html?v=40",
+    f"{APP_BASE_URL}/static/index.html?v=45",
 )
 
 # Telegram ID адміністраторів
