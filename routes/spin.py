@@ -24,14 +24,16 @@ from bot import get_bot_and_dispatcher
 
 router = APIRouter()
 
-# На новому колесі сектор "Нічого" має індекс 2
-NOTHING_SECTOR_INDEX = 2
+# Сектора «Нічого» більше немає.
+# Fallback-сектор — 0, Косметичка OXVA.
+# Використовується тільки для помилок / повторної спроби / коли подарунки закінчились.
+FALLBACK_SECTOR_INDEX = 0
 
 # Захист від подвійного натискання одного користувача
 SPIN_LOCKS: dict[str, asyncio.Lock] = {}
 
 # Глобальний захист роздачі подарунків.
-# Потрібен, щоб два різні користувачі одночасно не забрали один і той самий слот подарунка.
+# Потрібен, щоб два різні користувачі одночасно не забрали один і той самий подарунок.
 PRIZE_DISTRIBUTION_LOCK = asyncio.Lock()
 
 
@@ -56,20 +58,47 @@ def format_time_left(delta: datetime.timedelta) -> str:
 
 
 def is_real_win(prize: str, sector_index: int, is_prank: bool) -> bool:
+    """
+    Перевіряє, чи це реальний виграш.
+
+    Сектора «Нічого» більше немає, тому НЕ перевіряємо sector_index.
+    Бо сектор 2 тепер — це Сумка.
+    """
+
     if is_prank:
         return False
 
-    if sector_index == NOTHING_SECTOR_INDEX:
+    if not prize:
         return False
 
     if prize == "Нічого":
         return False
 
+    if prize == "Помилка":
+        return False
+
+    if prize == "Подарунки закінчились":
+        return False
+
+    if prize == PRANK_TEXT:
+        return False
+
     return True
 
 
-def get_nothing_result() -> tuple[str, int]:
-    return "Нічого", NOTHING_SECTOR_INDEX
+def get_no_prize_result() -> tuple[str, int]:
+    """
+    Технічний результат, якщо подарунки закінчились або шанс не спрацював.
+
+    На самому колесі такого сектора вже немає, тому ставимо fallback 0.
+    При WIN_CHANCE_PERCENT = 100.0 це спрацює тільки коли всі stock = 0.
+    """
+
+    return "Подарунки закінчились", FALLBACK_SECTOR_INDEX
+
+
+def get_error_result() -> tuple[str, int]:
+    return "Помилка", FALLBACK_SECTOR_INDEX
 
 
 def get_excluded_user_ids() -> list[str]:
@@ -137,12 +166,14 @@ def get_real_spin_count(db) -> int:
 def get_awarded_real_prize_count(db) -> int:
     """
     Рахує, скільки реальних подарунків вже роздали.
-    "Нічого", prank і адмінські тести не рахуються.
+    Технічні результати, prank і адмінські тести не рахуються.
     """
 
     query = (
         db.query(Spin)
         .filter(Spin.prize != "Нічого")
+        .filter(Spin.prize != "Подарунки закінчились")
+        .filter(Spin.prize != "Помилка")
         .filter(Spin.prize != PRANK_TEXT)
     )
 
@@ -171,14 +202,19 @@ def get_unlocked_prize_slots(real_spin_number: int) -> int:
 
 def get_available_gift_prizes(db) -> list[PrizeStock]:
     """
-    Доступні саме подарунки.
-    Сектор "Нічого" сюди не входить.
+    Доступні подарунки.
+
+    ВАЖЛИВО:
+    Сектора «Нічого» більше немає, тому сектор 2 НЕ виключаємо.
+    Сектор 2 тепер — це Сумка.
     """
 
     return (
         db.query(PrizeStock)
-        .filter(PrizeStock.sector_index != NOTHING_SECTOR_INDEX)
         .filter(PrizeStock.prize != "Нічого")
+        .filter(PrizeStock.prize != "Подарунки закінчились")
+        .filter(PrizeStock.prize != "Помилка")
+        .filter(PrizeStock.prize != PRANK_TEXT)
         .filter(PrizeStock.weight > 0)
         .filter(PrizeStock.stock > 0)
         .all()
@@ -193,7 +229,7 @@ def choose_available_gift_prize(db) -> tuple[str, int, PrizeStock | None]:
     available_gifts = get_available_gift_prizes(db)
 
     if not available_gifts:
-        prize, sector_index = get_nothing_result()
+        prize, sector_index = get_no_prize_result()
         return prize, sector_index, None
 
     selected = random.choices(
@@ -210,16 +246,19 @@ def choose_chance_prize(db) -> tuple[str, int, PrizeStock | None]:
     Логіка шансу:
 
     1. Генеруємо випадкове число від 0 до 100.
-    2. Якщо число більше за WIN_CHANCE_PERCENT — падає "Нічого".
+    2. Якщо число більше за WIN_CHANCE_PERCENT — технічний результат.
     3. Якщо шанс спрацював — видаємо один із доступних подарунків.
-    4. Якщо подарунки закінчились — падає "Нічого".
+    4. Якщо подарунки закінчились — технічний результат.
+
+    При WIN_CHANCE_PERCENT = 100.0 кожна прокрутка видає приз,
+    поки у PRIZES_ є stock > 0.
     """
 
     chance = max(0.0, min(100.0, float(WIN_CHANCE_PERCENT)))
     roll = random.uniform(0, 100)
 
     if roll > chance:
-        prize, sector_index = get_nothing_result()
+        prize, sector_index = get_no_prize_result()
         return prize, sector_index, None
 
     return choose_available_gift_prize(db)
@@ -232,9 +271,9 @@ def choose_controlled_prize(
     """
     Контрольована логіка:
 
-    1. Якщо ще не настав поріг подарунка — падає "Нічого".
+    1. Якщо ще не настав поріг подарунка — технічний результат.
     2. Якщо подарунковий слот відкрився — видаємо подарунок.
-    3. Якщо всі подарунки закінчились — падає "Нічого".
+    3. Якщо всі подарунки закінчились — технічний результат.
     """
 
     unlocked_slots = get_unlocked_prize_slots(real_spin_number)
@@ -242,7 +281,7 @@ def choose_controlled_prize(
 
     # На цьому етапі ще не можна видати новий подарунок
     if awarded_prizes >= unlocked_slots:
-        prize, sector_index = get_nothing_result()
+        prize, sector_index = get_no_prize_result()
         return prize, sector_index, None
 
     return choose_available_gift_prize(db)
@@ -472,10 +511,12 @@ async def spin(request: Request):
             )
 
             if not lead:
+                prize, sector_index = get_error_result()
+
                 return JSONResponse(
                     {
-                        "prize": "Нічого",
-                        "sector_index": NOTHING_SECTOR_INDEX,
+                        "prize": prize,
+                        "sector_index": sector_index,
                         "repeat": True,
                         "message": "Спочатку пройди реєстрацію в боті.",
                     }
@@ -487,10 +528,12 @@ async def spin(request: Request):
             )
 
             if not is_subscribed:
+                prize, sector_index = get_error_result()
+
                 return JSONResponse(
                     {
-                        "prize": "Нічого",
-                        "sector_index": NOTHING_SECTOR_INDEX,
+                        "prize": prize,
+                        "sector_index": sector_index,
                         "repeat": True,
                         "message": (
                             "Щоб крутити колесо, потрібно бути підписаним "
@@ -517,9 +560,7 @@ async def spin(request: Request):
                     return JSONResponse(
                         {
                             "prize": last_spin.prize,
-                            "sector_index": PRANK_SECTOR_INDEX
-                            if is_prank_user
-                            else NOTHING_SECTOR_INDEX,
+                            "sector_index": FALLBACK_SECTOR_INDEX,
                             "repeat": True,
                             "message": (
                                 "Ви вже крутили колесо. "

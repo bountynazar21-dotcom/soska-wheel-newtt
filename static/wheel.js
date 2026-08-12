@@ -17,36 +17,34 @@ let transitionFallbackTimer = null;
 
 // ПОРЯДОК СЕКТОРІВ = ЯК НА НОВОМУ КОЛЕСІ
 // ВІД ВЕРХУ ЗА ГОДИННИКОВОЮ:
-// 0 — Лоторейка OXVA
-// 1 — Шопер
-// 2 — Нічого
-// 3 — Головний убір
-// 4 — OXVA Go Lite
-// 5 — OXVA Pro 3
-// 6 — Брелок
+//
+// 0 — Косметичка OXVA
+// 1 — Панамка
+// 2 — Сумка
+// 3 — XLIM 3 Ultra
+// 4 — Окуляри OXVA
+// 5 — Кепка
 const sectors = [
-  "Лоторейка OXVA",
-  "Шопер",
-  "Нічого",
-  "Головний убір",
-  "OXVA Go Lite",
-  "OXVA Pro 3",
-  "Брелок"
+  "Косметичка OXVA",
+  "Панамка",
+  "Сумка",
+  "XLIM 3 Ultra",
+  "Окуляри OXVA",
+  "Кепка"
 ];
 
 const SECTOR_ANGLE = 360 / sectors.length;
 
-// На новому колесі сектор 0 вже стоїть по центру зверху,
-// тому половину сектора більше не додаємо.
+// Сектор 0 стоїть зверху по центру
 const SAFE_CENTER_OFFSET = 0;
 
 // Мікрокалібрування стрілки.
 // 0 = рівно по центру сектора.
-// Якщо стрілка трохи вліво/вправо — міняємо це число.
-// Наприклад: -3, +3, -5, +5.
 const POINTER_OFFSET = 0;
 
-const NOTHING_SECTOR_INDEX = 2;
+// Сектора «Нічого» більше немає.
+// Fallback ставимо на 0 — Косметичка OXVA.
+const FALLBACK_SECTOR_INDEX = 0;
 
 function setResult(text, type = "default") {
   if (!res) return;
@@ -79,7 +77,7 @@ async function spinRequest(payload) {
 
     return {
       prize: "Помилка",
-      sector_index: NOTHING_SECTOR_INDEX,
+      sector_index: FALLBACK_SECTOR_INDEX,
       repeat: true,
       message: "Помилка. Спробуй ще раз пізніше."
     };
@@ -92,9 +90,7 @@ function isPrankText(text) {
 
 function isRealWin(prize, sectorIndex) {
   if (!prize) return false;
-  if (prize === "Нічого") return false;
   if (prize === "Помилка") return false;
-  if (sectorIndex === NOTHING_SECTOR_INDEX) return false;
   if (isPrankText(prize)) return false;
 
   return true;
@@ -146,11 +142,6 @@ function finishSpin(prize, sectorIndex, repeat, message) {
     setResult(message || "Ви вже крутили колесо.", "repeat");
   } else if (isPrankText(prize)) {
     setResult(prize, "prank");
-  } else if (prize === "Нічого") {
-    setResult(
-      "На жаль, цього разу без подарунка. Спробуй наступного разу!",
-      "empty"
-    );
   } else if (prize === "Помилка") {
     setResult("Помилка. Спробуй ще раз пізніше.", "error");
   } else {
@@ -191,13 +182,13 @@ if (!btn || !pointerRotator) {
 
     const { prize, sector_index, repeat, message } = data;
 
-    let sectorIndex = NOTHING_SECTOR_INDEX;
+    let sectorIndex = FALLBACK_SECTOR_INDEX;
 
     if (typeof sector_index === "number" && sector_index >= 0) {
       sectorIndex = sector_index % sectors.length;
     } else {
       const idx = sectors.indexOf(prize);
-      sectorIndex = idx !== -1 ? idx : NOTHING_SECTOR_INDEX;
+      sectorIndex = idx !== -1 ? idx : FALLBACK_SECTOR_INDEX;
       console.warn("Prize not matched, using fallback sector:", prize);
     }
 
