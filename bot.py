@@ -1,5 +1,6 @@
 import datetime
 import logging
+import html
 from pathlib import Path
 
 from aiogram import Bot, Dispatcher, Router, F
@@ -56,19 +57,31 @@ def is_admin_user(user_id: int | str | None) -> bool:
         return False
 
     user_id_str = str(user_id)
-    return user_id_str.isdigit() and int(user_id_str) in ADMINS
+
+    return (
+        user_id_str.isdigit()
+        and int(user_id_str) in ADMINS
+    )
 
 
-def format_time_left(delta: datetime.timedelta) -> str:
-    total_seconds = max(0, int(delta.total_seconds()))
+def format_time_left(
+    delta: datetime.timedelta,
+) -> str:
+    total_seconds = max(
+        0,
+        int(delta.total_seconds()),
+    )
+
     days = total_seconds // 86400
     hours = (total_seconds % 86400) // 3600
     minutes = (total_seconds % 3600) // 60
 
     if days > 0:
         return f"{days} дн. {hours} год."
+
     if hours > 0:
         return f"{hours} год. {minutes} хв."
+
     return f"{minutes} хв."
 
 
@@ -78,7 +91,9 @@ def build_webapp_keyboard() -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(
                     text="🎡 Відкрити колесо фортуни",
-                    web_app=WebAppInfo(url=WEBAPP_URL),
+                    web_app=WebAppInfo(
+                        url=WEBAPP_URL
+                    ),
                 )
             ]
         ]
@@ -104,12 +119,18 @@ def build_subscribe_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-async def is_user_subscribed(bot: Bot, user_id: int) -> bool:
+async def is_user_subscribed(
+    bot: Bot,
+    user_id: int,
+) -> bool:
     if is_admin_user(user_id):
         return True
 
     try:
-        member = await bot.get_chat_member(CHANNEL_USERNAME, user_id)
+        member = await bot.get_chat_member(
+            CHANNEL_USERNAME,
+            user_id,
+        )
 
         return member.status in (
             "member",
@@ -120,12 +141,16 @@ async def is_user_subscribed(bot: Bot, user_id: int) -> bool:
 
     except TelegramAPIError as e:
         logging.error(
-            f"Subscription check failed for user {user_id}: {e}"
+            f"Subscription check failed "
+            f"for user {user_id}: {e}"
         )
+
         return False
 
 
-def get_active_cooldown(user_id: str | int | None):
+def get_active_cooldown(
+    user_id: str | int | None,
+):
     if is_admin_user(user_id):
         return None
 
@@ -136,8 +161,12 @@ def get_active_cooldown(user_id: str | int | None):
     try:
         last_spin = (
             db.query(Spin)
-            .filter(Spin.user_id == user_id_str)
-            .order_by(Spin.datetime.desc())
+            .filter(
+                Spin.user_id == user_id_str
+            )
+            .order_by(
+                Spin.datetime.desc()
+            )
             .first()
         )
 
@@ -146,8 +175,11 @@ def get_active_cooldown(user_id: str | int | None):
 
         now = datetime.datetime.utcnow()
 
-        cooldown_until = last_spin.datetime + datetime.timedelta(
-            days=SPIN_COOLDOWN_DAYS
+        cooldown_until = (
+            last_spin.datetime
+            + datetime.timedelta(
+                days=SPIN_COOLDOWN_DAYS
+            )
         )
 
         if now >= cooldown_until:
@@ -162,7 +194,8 @@ def get_active_cooldown(user_id: str | int | None):
 def get_total_prize_stock() -> int | None:
     """
     int  -> сумарний актуальний залишок.
-    None -> є безлімітний prize (stock=None), тому фонд не вичерпаний.
+    None -> є безлімітний prize (stock=None),
+            тому фонд не вичерпаний.
     """
 
     db = SessionLocal()
@@ -170,13 +203,21 @@ def get_total_prize_stock() -> int | None:
     try:
         ensure_prize_stock(db)
 
-        rows = db.query(PrizeStock).all()
+        rows = db.query(
+            PrizeStock
+        ).all()
 
-        if any(row.stock is None for row in rows):
+        if any(
+            row.stock is None
+            for row in rows
+        ):
             return None
 
         return sum(
-            max(0, int(row.stock or 0))
+            max(
+                0,
+                int(row.stock or 0),
+            )
             for row in rows
         )
 
@@ -187,10 +228,17 @@ def get_total_prize_stock() -> int | None:
 def prizes_available() -> bool:
     total_stock = get_total_prize_stock()
 
-    return total_stock is None or total_stock > 0
+    return (
+        total_stock is None
+        or total_stock > 0
+    )
 
 
-def get_stock_data() -> tuple[list[dict], int | None, int | None]:
+def get_stock_data() -> tuple[
+    list[dict],
+    int | None,
+    int | None,
+]:
     db = SessionLocal()
 
     try:
@@ -198,7 +246,9 @@ def get_stock_data() -> tuple[list[dict], int | None, int | None]:
 
         rows = (
             db.query(PrizeStock)
-            .order_by(PrizeStock.sector_index.asc())
+            .order_by(
+                PrizeStock.sector_index.asc()
+            )
             .all()
         )
 
@@ -211,23 +261,35 @@ def get_stock_data() -> tuple[list[dict], int | None, int | None]:
             for row in rows
         ]
 
-        if any(item["stock"] is None for item in result):
+        if any(
+            item["stock"] is None
+            for item in result
+        ):
             return result, None, None
 
         total_remaining = sum(
-            max(0, int(item["stock"] or 0))
+            max(
+                0,
+                int(item["stock"] or 0),
+            )
             for item in result
         )
 
         initial_by_sector = {
-            int(item["sector_index"]): int(item["stock"])
+            int(
+                item["sector_index"]
+            ): int(
+                item["stock"]
+            )
             for item in PRIZES_
             if item.get("stock") is not None
         }
 
         initial_total = sum(
             initial_by_sector.get(
-                int(item["sector_index"]),
+                int(
+                    item["sector_index"]
+                ),
                 0,
             )
             for item in result
@@ -235,7 +297,8 @@ def get_stock_data() -> tuple[list[dict], int | None, int | None]:
 
         total_awarded = max(
             0,
-            initial_total - total_remaining,
+            initial_total
+            - total_remaining,
         )
 
         return (
@@ -261,7 +324,9 @@ def save_lead(
     try:
         lead = (
             db.query(Lead)
-            .filter(Lead.user_id == user_id)
+            .filter(
+                Lead.user_id == user_id
+            )
             .first()
         )
 
@@ -282,7 +347,9 @@ def save_lead(
             lead.phone = phone
 
             if receipt_file_id:
-                lead.receipt_file_id = receipt_file_id
+                lead.receipt_file_id = (
+                    receipt_file_id
+                )
 
         db.commit()
 
@@ -313,25 +380,36 @@ def create_pending_registration(
 
     try:
         pending = (
-            db.query(ParticipantRegistration)
+            db.query(
+                ParticipantRegistration
+            )
             .filter(
-                ParticipantRegistration.user_id == user_id,
-                ParticipantRegistration.registration_completed_at.is_(None),
+                ParticipantRegistration.user_id
+                == user_id,
+                ParticipantRegistration
+                .registration_completed_at
+                .is_(None),
             )
             .order_by(
-                ParticipantRegistration.id.desc()
+                ParticipantRegistration
+                .id
+                .desc()
             )
             .first()
         )
 
         if pending is None:
-            pending = ParticipantRegistration(
-                user_id=user_id,
-                username=username,
-                name=name,
-                phone=phone,
-                receipt_file_id=receipt_file_id,
-                subscription_confirmed=False,
+            pending = (
+                ParticipantRegistration(
+                    user_id=user_id,
+                    username=username,
+                    name=name,
+                    phone=phone,
+                    receipt_file_id=(
+                        receipt_file_id
+                    ),
+                    subscription_confirmed=False,
+                )
             )
 
             db.add(pending)
@@ -340,7 +418,9 @@ def create_pending_registration(
             pending.username = username
             pending.name = name
             pending.phone = phone
-            pending.receipt_file_id = receipt_file_id
+            pending.receipt_file_id = (
+                receipt_file_id
+            )
 
         db.commit()
         db.refresh(pending)
@@ -351,7 +431,8 @@ def create_pending_registration(
         db.rollback()
 
         logging.error(
-            f"Failed to create pending registration: {e}"
+            "Failed to create pending "
+            f"registration: {e}"
         )
 
         return None
@@ -368,11 +449,17 @@ def get_pending_registration(
     db = SessionLocal()
 
     try:
-        query = db.query(
-            ParticipantRegistration
-        ).filter(
-            ParticipantRegistration.user_id == user_id,
-            ParticipantRegistration.registration_completed_at.is_(None),
+        query = (
+            db.query(
+                ParticipantRegistration
+            )
+            .filter(
+                ParticipantRegistration.user_id
+                == user_id,
+                ParticipantRegistration
+                .registration_completed_at
+                .is_(None),
+            )
         )
 
         if registration_id is not None:
@@ -384,7 +471,9 @@ def get_pending_registration(
         row = (
             query
             .order_by(
-                ParticipantRegistration.id.desc()
+                ParticipantRegistration
+                .id
+                .desc()
             )
             .first()
         )
@@ -422,7 +511,9 @@ def complete_registration(
 
     try:
         row = (
-            db.query(ParticipantRegistration)
+            db.query(
+                ParticipantRegistration
+            )
             .filter(
                 ParticipantRegistration.id
                 == registration_id
@@ -433,9 +524,15 @@ def complete_registration(
         if row is None:
             return None
 
-        if row.registration_completed_at is None:
+        if (
+            row.registration_completed_at
+            is None
+        ):
             row.subscription_confirmed = True
-            row.participation_type = participation_type
+
+            row.participation_type = (
+                participation_type
+            )
 
             row.registration_completed_at = (
                 datetime.datetime.utcnow()
@@ -446,7 +543,9 @@ def complete_registration(
 
         return {
             "id": int(row.id),
-            "user_id": str(row.user_id),
+            "user_id": str(
+                row.user_id
+            ),
             "username": str(
                 row.username or "user"
             ),
@@ -466,8 +565,9 @@ def complete_registration(
                 row.participation_type
                 or participation_type
             ),
-            "registration_completed_at":
-                row.registration_completed_at,
+            "registration_completed_at": (
+                row.registration_completed_at
+            ),
             "prize": str(
                 row.prize or ""
             ),
@@ -477,7 +577,8 @@ def complete_registration(
         db.rollback()
 
         logging.error(
-            f"Failed to complete registration: {e}"
+            "Failed to complete "
+            f"registration: {e}"
         )
 
         return None
@@ -493,7 +594,7 @@ async def notify_prizes_depleted_once(
         return
 
     setting_key = (
-        f"prizes_depleted_notified::"
+        "prizes_depleted_notified::"
         f"{PRIZE_POOL_VERSION}"
     )
 
@@ -503,12 +604,16 @@ async def notify_prizes_depleted_once(
         setting = (
             db.query(AppSetting)
             .filter(
-                AppSetting.key == setting_key
+                AppSetting.key
+                == setting_key
             )
             .first()
         )
 
-        if setting and setting.value == "1":
+        if (
+            setting
+            and setting.value == "1"
+        ):
             return
 
         if setting is None:
@@ -541,9 +646,10 @@ async def notify_prizes_depleted_once(
         "🚨 <b>ПОДАРУНКИ ЗАКІНЧИЛИСЯ</b>\n\n"
         "Усі подарунки в Колесі Фортуни були видані.\n\n"
         "🎁 Залишок: <b>0 шт.</b>\n\n"
-        "Відтепер нові користувачі проходять реєстрацію, "
-        "надсилають фото чека та підтверджують підписку, "
-        "але колесо їм більше не відкривається."
+        "Відтепер нові користувачі проходять "
+        "реєстрацію, надсилають фото чека та "
+        "підтверджують підписку, але колесо їм "
+        "більше не відкривається."
     )
 
     for admin_id in ADMINS:
@@ -560,50 +666,162 @@ async def notify_prizes_depleted_once(
             )
 
 
-async def notify_admins_about_no_spin_registration(
+# =========================
+# НОВА РЕЄСТРАЦІЯ + ФОТО ЧЕКА
+# =========================
+
+async def notify_admins_about_registration(
     *,
     bot_obj: Bot,
     registration: dict,
 ) -> None:
-    username = registration["username"]
+    """
+    Відправляє адміну / продавцю
+    КОЖНУ завершену реєстрацію
+    разом із фото чека.
+    """
 
-    telegram_name = (
-        f"@{username}"
-        if (
-            username != "user"
-            and " " not in username
-            and not username.startswith("@")
+    username = str(
+        registration.get(
+            "username",
+            "user",
         )
-        else username
     )
+
+    name = html.escape(
+        str(
+            registration.get(
+                "name",
+                "-",
+            )
+        )
+    )
+
+    phone = html.escape(
+        str(
+            registration.get(
+                "phone",
+                "-",
+            )
+        )
+    )
+
+    user_id = html.escape(
+        str(
+            registration.get(
+                "user_id",
+                "-",
+            )
+        )
+    )
+
+    registration_id = html.escape(
+        str(
+            registration.get(
+                "id",
+                "-",
+            )
+        )
+    )
+
+    participation_type = html.escape(
+        str(
+            registration.get(
+                "participation_type",
+                "Колесо Фортуни",
+            )
+        )
+    )
+
+    username_clean = username.lstrip("@")
+
+    if (
+        username_clean
+        and username_clean != "user"
+        and " " not in username_clean
+    ):
+        telegram_name = (
+            f"@{html.escape(username_clean)}"
+        )
+    else:
+        telegram_name = html.escape(
+            username
+        )
+
+    if (
+        registration.get(
+            "participation_type"
+        )
+        == "Реєстрація без спіна"
+    ):
+        wheel_status = (
+            "❌ Недоступне — "
+            "подарунки закінчилися"
+        )
+
+    else:
+        wheel_status = "✅ Доступне"
 
     caption = (
         "📝 <b>НОВА РЕЄСТРАЦІЯ</b>\n\n"
-        f"Імʼя: {registration['name']}\n"
-        f"Телефон: {registration['phone']}\n"
-        f"Telegram: {telegram_name}\n"
-        f"Telegram ID: {registration['user_id']}\n\n"
-        "📸 Чек отримано\n"
-        "✅ Підписка підтверджена\n\n"
-        "🎡 Колесо: недоступне\n"
-        "🎁 Залишок подарунків: 0\n\n"
-        "Користувача додано до бази учасників."
+
+        f"👤 Імʼя: <b>{name}</b>\n"
+
+        f"☎️ Телефон: "
+        f"<b>{phone}</b>\n"
+
+        f"💬 Telegram: "
+        f"{telegram_name}\n"
+
+        f"🆔 Telegram ID: "
+        f"<code>{user_id}</code>\n\n"
+
+        "📸 <b>ЧЕК КЛІЄНТА — НА ФОТО</b>\n"
+
+        "✅ Підписка на канал "
+        "підтверджена\n\n"
+
+        f"🎡 Колесо: "
+        f"{wheel_status}\n"
+
+        f"📋 Тип участі: "
+        f"<b>{participation_type}</b>\n\n"
+
+        f"🔢 ID реєстрації: "
+        f"<code>{registration_id}</code>"
+    )
+
+    receipt_file_id = (
+        registration.get(
+            "receipt_file_id"
+        )
     )
 
     for admin_id in ADMINS:
         try:
-            await bot_obj.send_photo(
-                chat_id=admin_id,
-                photo=registration[
-                    "receipt_file_id"
-                ],
-                caption=caption,
-            )
+            if receipt_file_id:
+                await bot_obj.send_photo(
+                    chat_id=admin_id,
+                    photo=receipt_file_id,
+                    caption=caption,
+                )
+
+            else:
+                await bot_obj.send_message(
+                    chat_id=admin_id,
+                    text=(
+                        caption
+                        + "\n\n"
+                        "⚠️ <b>Фото чека "
+                        "не знайдено.</b>"
+                    ),
+                )
 
         except Exception as e:
             logging.error(
-                f"Failed to notify admin "
-                f"{admin_id}: {e}"
+                "Failed to send "
+                "registration notification "
+                f"to {admin_id}: {e}"
             )
 
 
@@ -615,7 +833,9 @@ async def finish_registration_flow(
     state: FSMContext,
     message: Message,
 ) -> None:
-    total_stock = get_total_prize_stock()
+    total_stock = (
+        get_total_prize_stock()
+    )
 
     has_prizes = (
         total_stock is None
@@ -623,8 +843,10 @@ async def finish_registration_flow(
     )
 
     if has_prizes:
-        cooldown_left = get_active_cooldown(
-            user_id
+        cooldown_left = (
+            get_active_cooldown(
+                user_id
+            )
         )
 
         if cooldown_left:
@@ -632,7 +854,8 @@ async def finish_registration_flow(
 
             await message.answer(
                 "Ти вже крутив колесо 🎡\n"
-                "Наступна спроба буде доступна через "
+                "Наступна спроба буде "
+                "доступна через "
                 f"{format_time_left(cooldown_left)}."
             )
 
@@ -644,9 +867,15 @@ async def finish_registration_flow(
         else "Реєстрація без спіна"
     )
 
-    registration = complete_registration(
-        registration_id=registration_id,
-        participation_type=participation_type,
+    registration = (
+        complete_registration(
+            registration_id=(
+                registration_id
+            ),
+            participation_type=(
+                participation_type
+            ),
+        )
     )
 
     if registration is None:
@@ -656,6 +885,10 @@ async def finish_registration_flow(
         )
 
         return
+
+    # =========================
+    # ЗАПИС В EXCEL
+    # =========================
 
     try:
         await append_registration_to_excel(
@@ -667,29 +900,45 @@ async def finish_registration_flow(
             f"Excel export failed: {e}"
         )
 
+    # =========================
+    # ВІДПРАВЛЯЄМО ПРОДАВЦЮ /
+    # АДМІНУ ФОТО ЧЕКА
+    # =========================
+
+    await notify_admins_about_registration(
+        bot_obj=bot_obj,
+        registration=registration,
+    )
+
     await state.clear()
+
+    # =========================
+    # ПОДАРУНКИ ЩЕ Є
+    # =========================
 
     if has_prizes:
         await message.answer(
             "Все готово! 🎉\n"
             "Натискай кнопку нижче, "
             "щоб відкрити колесо фортуни:",
-            reply_markup=build_webapp_keyboard(),
+            reply_markup=(
+                build_webapp_keyboard()
+            ),
         )
 
         return
+
+    # =========================
+    # ПОДАРУНКИ ЗАКІНЧИЛИСЯ
+    # =========================
 
     await notify_prizes_depleted_once(
         bot_obj
     )
 
-    await notify_admins_about_no_spin_registration(
-        bot_obj=bot_obj,
-        registration=registration,
-    )
-
     await message.answer(
-        "✅ <b>Реєстрацію успішно завершено!</b>\n\n"
+        "✅ <b>Реєстрацію успішно "
+        "завершено!</b>\n\n"
         "Дякуємо за участь 💜\n"
         "Твої дані зареєстровані."
     )
@@ -699,7 +948,9 @@ async def finish_registration_flow(
 # ADMIN: STOCK
 # =========================
 
-@router.message(Command("stock"))
+@router.message(
+    Command("stock")
+)
 async def cmd_stock(
     message: Message,
 ) -> None:
@@ -718,7 +969,8 @@ async def cmd_stock(
     ) = get_stock_data()
 
     lines = [
-        "🎁 <b>Актуальний залишок подарунків</b>",
+        "🎁 <b>Актуальний залишок "
+        "подарунків</b>",
         "",
     ]
 
@@ -735,7 +987,9 @@ async def cmd_stock(
                 else str(
                     max(
                         0,
-                        int(row["stock"]),
+                        int(
+                            row["stock"]
+                        ),
                     )
                 )
             )
@@ -776,7 +1030,9 @@ async def cmd_stock(
 # ADMIN: EXCEL
 # =========================
 
-@router.message(Command("excel"))
+@router.message(
+    Command("excel")
+)
 async def cmd_excel(
     message: Message,
 ) -> None:
@@ -803,9 +1059,11 @@ async def cmd_excel(
         or not excel_path.is_file()
     ):
         await message.answer(
-            "📄 <b>Excel-файл ще не створений.</b>\n\n"
+            "📄 <b>Excel-файл ще "
+            "не створений.</b>\n\n"
             "Він зʼявиться після першої "
-            "успішно завершеної реєстрації."
+            "успішно завершеної "
+            "реєстрації."
         )
 
         return
@@ -819,28 +1077,34 @@ async def cmd_excel(
         await message.answer_document(
             document=document,
             caption=(
-                "📊 <b>Актуальна база учасників</b>\n\n"
-                f"Файл: <code>{excel_path.name}</code>"
+                "📊 <b>Актуальна база "
+                "учасників</b>\n\n"
+                f"Файл: "
+                f"<code>{excel_path.name}</code>"
             ),
         )
 
     except Exception as e:
         logging.exception(
-            "Failed to send participants "
-            f"Excel: {e}"
+            "Failed to send "
+            "participants Excel: "
+            f"{e}"
         )
 
         await message.answer(
-            "❌ Не вдалося відправити Excel-файл.\n"
+            "❌ Не вдалося відправити "
+            "Excel-файл.\n"
             "Перевір логи Railway."
         )
 
 
 # =========================
-# START / REGISTRATION
+# START
 # =========================
 
-@router.message(CommandStart())
+@router.message(
+    CommandStart()
+)
 async def cmd_start(
     message: Message,
     state: FSMContext,
@@ -864,7 +1128,8 @@ async def cmd_start(
         if cooldown_left:
             await message.answer(
                 "Ти вже крутив колесо 🎡\n"
-                "Наступна спроба буде доступна через "
+                "Наступна спроба буде "
+                "доступна через "
                 f"{format_time_left(cooldown_left)}."
             )
 
@@ -872,7 +1137,8 @@ async def cmd_start(
 
     await message.answer(
         "Привіт! 👋\n\n"
-        "Напиши, будь ласка, своє імʼя.",
+        "Напиши, будь ласка, "
+        "своє імʼя.",
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -880,6 +1146,10 @@ async def cmd_start(
         Registration.waiting_for_name
     )
 
+
+# =========================
+# NAME
+# =========================
 
 @router.message(
     Registration.waiting_for_name,
@@ -906,7 +1176,8 @@ async def process_name(
     await message.answer(
         "Супер! ✨\n"
         "Тепер напиши, будь ласка, "
-        "номер телефону у форматі +380..."
+        "номер телефону у форматі "
+        "+380..."
     )
 
     await state.set_state(
@@ -926,6 +1197,10 @@ async def name_required(
     )
 
 
+# =========================
+# PHONE
+# =========================
+
 @router.message(
     Registration.waiting_for_phone,
     F.text,
@@ -937,7 +1212,9 @@ async def process_phone(
     if message.from_user is None:
         return
 
-    phone = message.text.strip()
+    phone = (
+        message.text.strip()
+    )
 
     digits_count = sum(
         ch.isdigit()
@@ -968,13 +1245,16 @@ async def process_phone(
 
             await message.answer(
                 "Ти вже крутив колесо 🎡\n"
-                "Наступна спроба буде доступна через "
+                "Наступна спроба буде "
+                "доступна через "
                 f"{format_time_left(cooldown_left)}."
             )
 
             return
 
-    data = await state.get_data()
+    data = (
+        await state.get_data()
+    )
 
     name = (
         data.get("name")
@@ -1031,6 +1311,10 @@ async def phone_required(
     )
 
 
+# =========================
+# RECEIPT
+# =========================
+
 @router.message(
     Registration.waiting_for_receipt,
     F.photo,
@@ -1054,7 +1338,9 @@ async def process_receipt(
         message.photo[-1].file_id
     )
 
-    data = await state.get_data()
+    data = (
+        await state.get_data()
+    )
 
     name = (
         data.get("name")
@@ -1076,7 +1362,9 @@ async def process_receipt(
         username=str(username),
         name=str(name),
         phone=str(phone),
-        receipt_file_id=receipt_file_id,
+        receipt_file_id=(
+            receipt_file_id
+        ),
     ):
         await message.answer(
             "Сталася помилка при "
@@ -1092,7 +1380,9 @@ async def process_receipt(
             username=str(username),
             name=str(name),
             phone=str(phone),
-            receipt_file_id=receipt_file_id,
+            receipt_file_id=(
+                receipt_file_id
+            ),
         )
     )
 
@@ -1106,8 +1396,12 @@ async def process_receipt(
         return
 
     await state.update_data(
-        receipt_file_id=receipt_file_id,
-        registration_id=registration_id,
+        receipt_file_id=(
+            receipt_file_id
+        ),
+        registration_id=(
+            registration_id
+        ),
     )
 
     subscribed = (
@@ -1120,7 +1414,9 @@ async def process_receipt(
     if subscribed:
         await finish_registration_flow(
             user_id=user_id,
-            registration_id=registration_id,
+            registration_id=(
+                registration_id
+            ),
             bot_obj=bot,
             state=state,
             message=message,
@@ -1129,14 +1425,17 @@ async def process_receipt(
         return
 
     await state.set_state(
-        Registration.waiting_for_subscription
+        Registration
+        .waiting_for_subscription
     )
 
     await message.answer(
         "Фото чека отримано ✅\n\n"
         "Тепер підпишись на наш "
         "Telegram-канал 👇",
-        reply_markup=build_subscribe_keyboard(),
+        reply_markup=(
+            build_subscribe_keyboard()
+        ),
     )
 
 
@@ -1154,6 +1453,10 @@ async def receipt_required(
         "не підходить."
     )
 
+
+# =========================
+# SUBSCRIPTION
+# =========================
 
 @router.callback_query(
     F.data == "check_subscription"
@@ -1184,7 +1487,9 @@ async def check_subscription_callback(
         callback.from_user.id
     )
 
-    data = await state.get_data()
+    data = (
+        await state.get_data()
+    )
 
     registration_id = (
         data.get(
@@ -1200,16 +1505,22 @@ async def check_subscription_callback(
         )
 
         if pending:
-            registration_id = pending["id"]
+            registration_id = (
+                pending["id"]
+            )
 
             await state.update_data(
-                registration_id=registration_id,
+                registration_id=(
+                    registration_id
+                ),
                 receipt_file_id=pending[
                     "receipt_file_id"
                 ],
                 name=pending["name"],
                 phone=pending["phone"],
-                username=pending["username"],
+                username=pending[
+                    "username"
+                ],
             )
 
     if registration_id is None:
@@ -1246,10 +1557,17 @@ async def subscription_waiting_message(
     await message.answer(
         "Підпишись на канал, "
         "а потім натисни кнопку "
-        "<b>«✅ Я підписався»</b> нижче.",
-        reply_markup=build_subscribe_keyboard(),
+        "<b>«✅ Я підписався»</b> "
+        "нижче.",
+        reply_markup=(
+            build_subscribe_keyboard()
+        ),
     )
 
+
+# =========================
+# BOT STARTUP
+# =========================
 
 def get_bot_and_dispatcher() -> tuple[
     Bot,

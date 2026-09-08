@@ -127,19 +127,13 @@ PRIZE_UNLOCK_SPINS: list[int] = []
 # 13 серпня 2026 року о 07:00 за Києвом
 # = 04:00 UTC.
 #
-# Залишаємо через env, щоб не редагувати код при наступній кампанії.
-CAMPAIGN_START_AT_UTC = os.getenv(
-    "CAMPAIGN_START_AT_UTC",
-    "2026-08-13T04:00:00",
-)
+# Старт розіграшу:
+# 9 вересня 2026 року о 08:00 за Києвом
+CAMPAIGN_START_AT_UTC = "2026-09-09T05:00:00"
 
 # Кінець розіграшу:
-# 20 серпня 2026 року о 21:00 за Києвом
-# = 18:00 UTC.
-CAMPAIGN_END_AT_UTC = os.getenv(
-    "CAMPAIGN_END_AT_UTC",
-    "2026-08-20T18:00:00",
-)
+# 15 вересня 2026 року о 21:00 за Києвом
+CAMPAIGN_END_AT_UTC = "2026-09-15T18:00:00"
 
 
 # =========================
@@ -157,7 +151,7 @@ CAMPAIGN_END_AT_UTC = os.getenv(
 # і свідомо хочемо завантажити нові стартові залишки.
 PRIZE_POOL_VERSION = os.getenv(
     "PRIZE_POOL_VERSION",
-    "oxva-merch-151-prizes-v3",
+    "oxva-merch-151-prizes-v4",
 )
 
 
@@ -183,20 +177,20 @@ PRIZES_ = [
     {
         "sector_index": 0,
         "prize": "Косметичка OXVA",
-        "stock": 34,
-        "weight": 34,
+        "stock": 6,
+        "weight": 6,
     },
     {
         "sector_index": 1,
         "prize": "Панамка",
-        "stock": 8,
-        "weight": 8,
+        "stock": 6,
+        "weight": 6,
     },
     {
         "sector_index": 2,
         "prize": "Сумка",
-        "stock": 26,
-        "weight": 26,
+        "stock": 15,
+        "weight": 15,
     },
     {
         "sector_index": 3,
@@ -207,14 +201,14 @@ PRIZES_ = [
     {
         "sector_index": 4,
         "prize": "Окуляри OXVA",
-        "stock": 17,
-        "weight": 17,
+        "stock": 8,
+        "weight": 8,
     },
     {
         "sector_index": 5,
         "prize": "Кепка",
-        "stock": 65,
-        "weight": 65,
+        "stock": 34,
+        "weight": 34,
     },
 ]
 
