@@ -2,40 +2,88 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  />
+
   <title>Soska Bar – Колесо фортуни</title>
 
-  <link rel="stylesheet" href="style.css?v=45" />
+  <link rel="stylesheet" href="style.css?v=46" />
 </head>
 
 <body>
   <div class="app">
     <h1 class="brand">Soska Bar</h1>
 
-    <div class="wheel-wrap">
-      <div class="wheel-container">
-        <img id="wheel" src="assets/wheel.png?v=45" alt="Wheel" />
+    <div
+      id="appStatus"
+      class="app-status"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
 
-        <div id="pointer-rotator" class="pointer-rotator">
+    <div id="wheelSection">
+      <div class="wheel-wrap">
+        <div class="wheel-container">
           <img
-            src="assets/pointer.svg?v=45"
-            alt="Pointer"
-            class="pointer"
+            id="wheel"
+            src="assets/wheel.png?v=46"
+            alt="Колесо фортуни Soska Bar"
           />
+
+          <div id="pointer-rotator" class="pointer-rotator">
+            <img
+              src="assets/pointer.svg?v=46"
+              alt="Вказівник колеса"
+              class="pointer"
+            />
+          </div>
         </div>
       </div>
+
+      <button
+        id="spinBtn"
+        class="spin-btn"
+        type="button"
+        aria-describedby="result"
+      >
+        🎡 Крутити
+      </button>
+
+      <p
+        id="result"
+        class="result result-default"
+        aria-live="polite"
+        aria-atomic="true"
+      ></p>
     </div>
 
-    <button id="spinBtn" class="spin-btn">🎡 Крутити</button>
-
-    <p id="result" class="result result-default"></p>
+    <div
+      id="closedState"
+      class="closed-state"
+      hidden
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <div class="closed-state-icon">🎁</div>
+      <h2>Подарунки вже закінчилися</h2>
+      <p>
+        Дякуємо за участь 💜
+        Твою реєстрацію збережено в базі учасників.
+      </p>
+    </div>
   </div>
 
-  <div id="fireworks" class="fireworks">
+  <div
+    id="fireworks"
+    class="fireworks"
+    aria-hidden="true"
+  >
     <div id="fireworks-text"></div>
   </div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="wheel.js?v=45"></script>
+  <script src="wheel.js?v=46"></script>
 </body>
 </html>

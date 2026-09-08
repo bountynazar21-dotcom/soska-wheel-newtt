@@ -5,27 +5,56 @@
   --yellow: #ffcc00;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html,
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter",
-    Arial, sans-serif;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Inter",
+    Arial,
+    sans-serif;
+
   min-height: 100vh;
+
   background: #000;
-  background-image: url("assets/bg.png?v=36");
+  background-image: url("assets/bg.png?v=46");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-attachment: fixed;
+
   color: #fff;
   overflow-x: hidden;
 }
+
+
+/* =========================
+   ОСНОВНИЙ БЛОК
+   ========================= */
 
 .app {
   width: 100%;
   max-width: 430px;
   min-height: 100vh;
+
   margin: 0 auto;
-  padding: 14px 8px 24px;
-  box-sizing: border-box;
+
+  padding:
+    max(14px, env(safe-area-inset-top))
+    8px
+    max(24px, env(safe-area-inset-bottom));
+
   text-align: center;
 
   display: flex;
@@ -36,22 +65,63 @@ body {
 .brand {
   font-size: 32px;
   font-weight: 900;
+
   margin: 14px 0 18px;
+
   line-height: 1.08;
   letter-spacing: 0.2px;
-  text-shadow: 0 0 12px rgba(0, 0, 0, 0.95);
+
+  text-shadow:
+    0 0 12px rgba(0, 0, 0, 0.95),
+    0 2px 6px rgba(0, 0, 0, 0.9);
 }
 
-/* ===== КОЛЕСО ===== */
+
+/* =========================
+   СТАТУС WEBAPP
+   ========================= */
+
+.app-status {
+  width: 100%;
+  max-width: 360px;
+
+  min-height: 0;
+
+  margin: 0 auto 10px;
+
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+
+  color: rgba(255, 255, 255, 0.88);
+
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
+}
+
+.app-status:empty {
+  display: none;
+}
+
+
+/* =========================
+   БЛОК КОЛЕСА
+   ========================= */
+
+#wheelSection {
+  width: 100%;
+}
 
 .wheel-wrap {
   position: relative;
+
   width: min(98vw, 400px);
+
   margin: 0 auto 14px;
 }
 
 .wheel-container {
   position: relative;
+
   width: 100%;
   aspect-ratio: 1 / 1;
 }
@@ -59,78 +129,135 @@ body {
 #wheel {
   width: 100%;
   height: 100%;
+
   display: block;
+
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-/* ===== СТРІЛКА ===== */
+
+/* =========================
+   СТРІЛКА
+   ========================= */
 
 .pointer-rotator {
   position: absolute;
+
   inset: 0;
+
   pointer-events: none;
+
   transform-origin: 50% 50%;
+
   will-change: transform;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+
   z-index: 5;
 }
 
 .pointer {
   position: absolute;
+
   left: 50%;
   top: 0;
+
   width: 30px;
-  transform: translateX(-50%) translateY(60%);
+
+  transform:
+    translateX(-50%)
+    translateY(60%);
+
   filter:
     drop-shadow(0 0 4px #00ff66)
     drop-shadow(0 0 10px rgba(0, 255, 100, 0.5));
+
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-/* ===== КНОПКА ===== */
+
+/* =========================
+   КНОПКА SPIN
+   ========================= */
 
 .spin-btn {
   margin-top: 16px;
+
   padding: 14px 30px;
+
   min-width: 225px;
+
   border-radius: 20px;
   border: none;
 
   font-size: 24px;
   font-weight: 900;
 
-  background: linear-gradient(90deg, var(--purple), var(--green));
+  background:
+    linear-gradient(
+      90deg,
+      var(--purple),
+      var(--green)
+    );
+
   color: #fff;
 
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.6),
+    0 0 22px rgba(123, 69, 255, 0.2);
+
   cursor: pointer;
 
   transition:
     transform 0.08s ease-out,
     box-shadow 0.08s ease-out,
-    opacity 0.2s ease-out;
+    opacity 0.2s ease-out,
+    filter 0.2s ease-out;
+
+  -webkit-tap-highlight-color: transparent;
+
+  touch-action: manipulation;
 }
 
 .spin-btn:active:not(:disabled) {
   transform: translateY(1px);
-  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.7);
+
+  box-shadow:
+    0 5px 14px rgba(0, 0, 0, 0.7);
 }
 
 .spin-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.58;
+
   cursor: default;
+
+  filter: grayscale(0.15);
 }
 
-/* ===== РЕЗУЛЬТАТ ===== */
+
+/* =========================
+   РЕЗУЛЬТАТ
+   ========================= */
 
 .result {
   margin: 16px auto 0;
+
   max-width: 360px;
+
   font-size: 18px;
   line-height: 1.35;
   font-weight: 900;
+
   min-height: 24px;
-  text-shadow: 0 0 8px rgba(0, 0, 0, 0.95);
-  box-sizing: border-box;
+
+  text-shadow:
+    0 0 8px rgba(0, 0, 0, 0.95);
+
   transition:
     transform 0.18s ease-out,
     background 0.18s ease-out,
@@ -144,48 +271,97 @@ body {
 
 .result-win {
   padding: 14px 16px;
+
   border-radius: 18px;
+
   color: #fff;
-  background: linear-gradient(135deg, #ff2d2d, #ff8a00, #7b45ff);
+
+  background:
+    linear-gradient(
+      135deg,
+      #ff2d2d,
+      #ff8a00,
+      #7b45ff
+    );
+
   box-shadow:
     0 0 18px rgba(255, 45, 45, 0.7),
     0 0 34px rgba(123, 69, 255, 0.45);
+
   transform: scale(1.03);
-  animation: winPulse 1.15s ease-in-out infinite;
+
+  animation:
+    winPulse 1.15s ease-in-out infinite;
 }
 
 .result-empty {
   padding: 12px 14px;
+
   border-radius: 16px;
+
   color: #f1f1f1;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  background:
+    rgba(0, 0, 0, 0.55);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.18);
 }
 
 .result-repeat {
   padding: 12px 14px;
+
   border-radius: 16px;
+
   color: #fff;
-  background: rgba(123, 69, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  background:
+    rgba(123, 69, 255, 0.72);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.2);
+
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.28);
 }
 
 .result-error {
   padding: 12px 14px;
+
   border-radius: 16px;
+
   color: #fff;
-  background: rgba(255, 45, 45, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  background:
+    rgba(255, 45, 45, 0.82);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.2);
+
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.28);
 }
 
 .result-prank {
   padding: 12px 14px;
+
   border-radius: 16px;
+
   color: #111;
-  background: var(--yellow);
+
+  background:
+    var(--yellow);
+
   text-shadow: none;
-  box-shadow: 0 0 18px rgba(255, 204, 0, 0.45);
+
+  box-shadow:
+    0 0 18px rgba(255, 204, 0, 0.45);
 }
+
+
+/* =========================
+   АНІМАЦІЯ ВИГРАШУ
+   ========================= */
 
 @keyframes winPulse {
   0% {
@@ -207,17 +383,133 @@ body {
   }
 }
 
-/* ===== ФЕЄРВЕРК ===== */
 
-.fireworks {
-  position: fixed;
-  inset: 0;
+/* =========================
+   ПОДАРУНКИ ЗАКІНЧИЛИСЬ
+   ========================= */
+
+.closed-state {
+  width: calc(100% - 24px);
+  max-width: 370px;
+
+  margin: 34px auto 0;
+
+  padding: 28px 20px;
+
+  border-radius: 26px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(123, 69, 255, 0.92),
+      rgba(33, 20, 65, 0.96)
+    );
+
+  border:
+    1px solid rgba(255, 255, 255, 0.22);
+
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.55),
+    0 0 32px rgba(123, 69, 255, 0.28);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  animation:
+    closedAppear 0.35s ease-out;
+}
+
+.closed-state[hidden] {
+  display: none !important;
+}
+
+.closed-state-icon {
+  width: 76px;
+  height: 76px;
+
+  margin: 0 auto 16px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
+  border-radius: 50%;
+
+  font-size: 38px;
+
+  background:
+    rgba(255, 255, 255, 0.13);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.18);
+
+  box-shadow:
+    0 0 24px rgba(255, 255, 255, 0.08);
+}
+
+.closed-state h2 {
+  margin: 0 0 12px;
+
+  font-size: 25px;
+  line-height: 1.15;
+  font-weight: 900;
+
+  color: #fff;
+
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.closed-state p {
+  margin: 0;
+
+  font-size: 16px;
+  line-height: 1.45;
+  font-weight: 650;
+
+  color:
+    rgba(255, 255, 255, 0.9);
+}
+
+@keyframes closedAppear {
+  from {
+    opacity: 0;
+    transform:
+      translateY(14px)
+      scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+/* =========================
+   ФЕЄРВЕРК
+   ========================= */
+
+.fireworks {
+  position: fixed;
+
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
   pointer-events: none;
+
   opacity: 0;
-  transition: opacity 0.2s ease-out;
+
+  transition:
+    opacity 0.2s ease-out;
+
   z-index: 999;
 }
 
@@ -226,18 +518,30 @@ body {
 }
 
 #fireworks-text {
+  max-width: 340px;
+
   color: #fff;
+
   font-size: 22px;
   font-weight: 900;
+
   padding: 14px 22px;
+
   border-radius: 18px;
-  background: radial-gradient(
-    circle at 20% 20%,
-    #ffeb3b,
-    #ff4081,
-    #651fff
-  );
-  box-shadow: 0 0 32px rgba(0, 0, 0, 0.7);
+
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      #ffeb3b,
+      #ff4081,
+      #651fff
+    );
+
+  box-shadow:
+    0 0 32px rgba(0, 0, 0, 0.7);
+
+  text-align: center;
+
   animation:
     pop 0.8s ease-out,
     float 1.5s ease-in-out infinite alternate;
@@ -270,44 +574,79 @@ body {
   }
 }
 
-/* ===== АДАПТИВ ===== */
+
+/* =========================
+   АДАПТИВ
+   ========================= */
 
 @media (max-width: 390px) {
   .app {
-    padding: 12px 6px 20px;
+    padding-left: 6px;
+    padding-right: 6px;
   }
 
   .brand {
     font-size: 30px;
-    margin: 12px 0 16px;
+
+    margin:
+      12px
+      0
+      16px;
   }
 
   .wheel-wrap {
     width: min(100vw, 385px);
+
     margin-bottom: 14px;
   }
 
   .pointer {
     width: 28px;
-    transform: translateX(-50%) translateY(62%);
+
+    transform:
+      translateX(-50%)
+      translateY(62%);
   }
 
   .spin-btn {
     margin-top: 15px;
+
     min-width: 220px;
-    padding: 13px 28px;
+
+    padding:
+      13px
+      28px;
+
     font-size: 24px;
   }
 
   .result {
     font-size: 17px;
+
     max-width: 330px;
+  }
+
+  .closed-state {
+    margin-top: 24px;
+
+    padding:
+      24px
+      17px;
+  }
+
+  .closed-state h2 {
+    font-size: 23px;
+  }
+
+  .closed-state p {
+    font-size: 15px;
   }
 
   #fireworks-text {
     font-size: 18px;
   }
 }
+
 
 @media (max-height: 720px) {
   .app {
@@ -316,20 +655,77 @@ body {
 
   .brand {
     font-size: 28px;
-    margin: 10px 0 12px;
+
+    margin:
+      10px
+      0
+      12px;
   }
 
   .wheel-wrap {
     width: min(94vw, 360px);
+
     margin-bottom: 10px;
   }
 
   .spin-btn {
     margin-top: 12px;
+
     font-size: 22px;
   }
 
   .result {
     margin-top: 10px;
+  }
+
+  .closed-state {
+    margin-top: 18px;
+  }
+}
+
+
+/* =========================
+   МАЛЕНЬКІ ЕКРАНИ
+   ========================= */
+
+@media (max-width: 340px) {
+  .brand {
+    font-size: 27px;
+  }
+
+  .wheel-wrap {
+    width: 96vw;
+  }
+
+  .spin-btn {
+    min-width: 200px;
+
+    padding:
+      12px
+      22px;
+
+    font-size: 21px;
+  }
+
+  .closed-state h2 {
+    font-size: 21px;
+  }
+}
+
+
+/* =========================
+   REDUCED MOTION
+   ========================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
+
+    scroll-behavior: auto !important;
   }
 }
