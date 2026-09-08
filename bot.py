@@ -12,6 +12,7 @@ from aiogram.types import (
     InlineKeyboardButton,
     WebAppInfo,
     ReplyKeyboardRemove,
+    FSInputFile,
 )
 from aiogram.exceptions import TelegramAPIError
 
@@ -34,6 +35,7 @@ from config import (
     ADMINS,
     PRIZE_POOL_VERSION,
     PRIZES_,
+    PARTICIPANTS_XLSX_PATH,
 )
 
 bot: Bot | None = None
