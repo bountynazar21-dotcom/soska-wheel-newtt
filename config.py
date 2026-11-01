@@ -1,3 +1,4 @@
+```python
 import os
 
 
@@ -124,16 +125,14 @@ PRIZE_UNLOCK_SPINS: list[int] = []
 # =========================
 
 # Старт розіграшу:
-# 13 серпня 2026 року о 07:00 за Києвом
-# = 04:00 UTC.
-#
-# Старт розіграшу:
-# 9 вересня 2026 року о 08:00 за Києвом
-CAMPAIGN_START_AT_UTC = "2026-09-09T05:00:00"
+# 25 вересня 2026 року о 09:00 за Києвом
+# = 06:00 UTC.
+CAMPAIGN_START_AT_UTC = "2026-09-25T06:00:00"
 
 # Кінець розіграшу:
-# 15 вересня 2026 року о 21:00 за Києвом
-CAMPAIGN_END_AT_UTC = "2026-09-15T18:00:00"
+# 25 вересня 2026 року о 20:00 за Києвом
+# = 17:00 UTC.
+CAMPAIGN_END_AT_UTC = "2026-09-25T17:00:00"
 
 
 # =========================
@@ -151,7 +150,7 @@ CAMPAIGN_END_AT_UTC = "2026-09-15T18:00:00"
 # і свідомо хочемо завантажити нові стартові залишки.
 PRIZE_POOL_VERSION = os.getenv(
     "PRIZE_POOL_VERSION",
-    "oxva-merch-151-prizes-v4",
+    "oxva-merch-151-prizes-v5",
 )
 
 
@@ -176,39 +175,39 @@ PRIZE_POOL_VERSION = os.getenv(
 PRIZES_ = [
     {
         "sector_index": 0,
-        "prize": "Косметичка OXVA",
-        "stock": 6,
-        "weight": 6,
-    },
-    {
-        "sector_index": 1,
-        "prize": "Панамка",
-        "stock": 6,
-        "weight": 6,
-    },
-    {
-        "sector_index": 2,
-        "prize": "Сумка",
-        "stock": 15,
-        "weight": 15,
-    },
-    {
-        "sector_index": 3,
-        "prize": "XLIM 3 Ultra",
-        "stock": 1,
-        "weight": 1,
-    },
-    {
-        "sector_index": 4,
-        "prize": "Окуляри OXVA",
+        "prize": "Панамка OXVA",
         "stock": 8,
         "weight": 8,
     },
     {
+        "sector_index": 1,
+        "prize": "Кабель OXVA",
+        "stock": 3,
+        "weight": 3,
+    },
+    {
+        "sector_index": 2,
+        "prize": "Брелок OXVA",
+        "stock": 3,
+        "weight": 3,
+    },
+    {
+        "sector_index": 3,
+        "prize": "Под-система OXVA",
+        "stock": 0,
+        "weight": 0,
+    },
+    {
+        "sector_index": 4,
+        "prize": "Ароматизатор в машину",
+        "stock": 10,
+        "weight": 10,
+    },
+    {
         "sector_index": 5,
-        "prize": "Кепка",
-        "stock": 34,
-        "weight": 34,
+        "prize": "Пов'язка OXVA",
+        "stock": 28,
+        "weight": 28,
     },
 ]
 
@@ -225,3 +224,4 @@ PRANK_TEXT = "Хахах, попався шпіоніро ))"
 # Сектора «Нічого» більше немає.
 # Залишаємо технічно 0, щоб старі імпорти не падали.
 PRANK_SECTOR_INDEX = 0
+```

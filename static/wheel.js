@@ -34,12 +34,12 @@ let wheelClosed = false;
 // 5 — Кепка
 //
 const sectors = [
-  "Косметичка OXVA",
-  "Панамка",
-  "Сумка",
-  "XLIM 3 Ultra",
-  "Окуляри OXVA",
-  "Кепка"
+    "Панамка OXVA",
+    "Кабель OXVA",
+    "Брелок OXVA",
+    "Под-система OXVA",
+    "Ароматизатор в машину",
+    "Пов'язка OXVA"
 ];
 
 const SECTOR_ANGLE = 360 / sectors.length;
